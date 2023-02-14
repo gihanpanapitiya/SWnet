@@ -1,6 +1,8 @@
+import os
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
+
 
 def get_drug_dict(smiles):
     try:
@@ -35,10 +37,13 @@ def split_data(data,split_case,ratio,cell_names):
     # train_id, test_id = train_id[0:100], test_id[0:100]
     return train_id, test_id
 
-def load_GDSC_data():
-    GDSC_rma_path = "../data/GDSC/GDSC_data/GDSC_rma.csv"
-    GDSC_variant_path = "../data/GDSC/GDSC_data/GDSC_variant.csv"
-    GDSC_smiles_path = "../data/GDSC/GDSC_data/GDSC_smiles.csv"
+def load_GDSC_data(base_path):
+    # GDSC_rma_path = base_path+"data/GDSC/GDSC_data/GDSC_rma.csv"   # original
+    # GDSC_variant_path = base_path+"data/GDSC/GDSC_data/GDSC_variant.csv"  # original
+    # GDSC_smiles_path = base_path+"data/GDSC/GDSC_data/GDSC_smiles.csv" # original
+    GDSC_rma_path = base_path+"/GDSC/GDSC_data/GDSC_rma.csv"
+    GDSC_variant_path = base_path+"/GDSC//GDSC_data/GDSC_variant.csv"
+    GDSC_smiles_path = base_path+"/GDSC/GDSC_data/GDSC_smiles.csv"
 
     rma = pd.read_csv(GDSC_rma_path, index_col=0)
     var = pd.read_csv(GDSC_variant_path, index_col=0)
@@ -46,13 +51,21 @@ def load_GDSC_data():
 
     return rma, var, smiles
 
-def load_CCLE_data():
-    GDSC_rma_path = "../data/CCLE/CCLE_data/CCLE_RNAseq.csv"
-    GDSC_variant_path = "../data/CCLE/CCLE_data/CCLE_DepMap.csv"
-    GDSC_smiles_path = "../data/CCLE/CCLE_data/CCLE_smiles.csv"
+def load_CCLE_data(base_path):
+    GDSC_rma_path = base_path+"/CCLE/CCLE_Data/CCLE_RNAseq.csv"
+    GDSC_variant_path = base_path+"/CCLE/CCLE_Data/CCLE_DepMap.csv"
+    GDSC_smiles_path = base_path+"/CCLE/CCLE_Data/CCLE_smiles.csv"
 
     rma = pd.read_csv(GDSC_rma_path, index_col=0)
     var = pd.read_csv(GDSC_variant_path, index_col=0)
     smiles = pd.read_csv(GDSC_smiles_path, index_col=0)
 
     return rma, var, smiles
+
+
+def get_data(data_url, CANDLE_DATA_DIR, download=True):
+    print('downloading data')
+    cache_subdir = os.path.join(CANDLE_DATA_DIR, 'SWnet', 'Data')
+    os.makedirs(cache_subdir, exist_ok=True)
+    os.system(f'svn checkout {data_url} {cache_subdir}')   
+    print('downloading done') 
