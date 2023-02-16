@@ -104,3 +104,7 @@ If you find this code useful for your research, please use the following citatio
 ```
 Zuo, Z., Wang, P., Chen, X. et al. SWnet: a deep learning model for drug response prediction from cancer genomic signatures and compound chemical structures. BMC Bioinformatics 22, 434 (2021). https://doi.org/10.1186/s12859-021-04352-9
 ```
+
+# Adding Candle Compatibility
+* The train scipts inside self-attention and multi-task folders were moved to the repository's root directory. 
+* svn is used to download the data to CANDLE_DATA_DIR/Data
