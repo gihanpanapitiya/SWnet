@@ -1,0 +1,16 @@
+[Global_Params]
+model_name='SWnet_MT'
+cuda_name = "cuda:0"
+batch_size=1024
+lr=0.001
+num_epochs=1
+step_size=150
+gamma=0.5
+radius=3
+split_case=0
+dim=50
+layer_gnn=3
+data_type='GDSC'
+data_url='https://github.com/zuozhaorui/SWnet/trunk/data'
+output_dir = 'Output'
+download_data = True
