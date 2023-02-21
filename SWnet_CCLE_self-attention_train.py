@@ -1,4 +1,3 @@
-# Create a custom logger
 import logging
 import os
 import torch
@@ -14,7 +13,6 @@ from tqdm import tqdm
 import time
 from datetime import datetime
 import sys
-# sys.path.append('..')
 import pickle
 import argparse
 import untils.until as untils
@@ -80,11 +78,6 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 
-# # gihan -- have to find the better logger
-# logname ='log.txt'
-# logsaved = True
-# if logsaved == True:
-#     log = open(logname, mode='wt')
 
 # graph dataset
 def load_tensor(file_name, dtype):
@@ -263,7 +256,6 @@ def train_model(model, train_loader, test_loader, dataset_sizes, criterion, opti
             y = y.view(-1, 1)
 
             y_pred = model(rma, var, drug_id)
-            # print('y_pred',y_pred)
             loss = criterion(y_pred, y)
             test_loss += loss.item() * rma.size(0)
 
@@ -272,7 +264,7 @@ def train_model(model, train_loader, test_loader, dataset_sizes, criterion, opti
 
         print('Train Loss: {:.4f} Test Loss: {:.4f}'.format(epoch_train_loss, epoch_test_loss))
         log.info('Train Loss: {:.4f} Test Loss: {:.4f}\n'.format(epoch_train_loss, epoch_test_loss))
-        # log.flush()
+   
         # deep copy the model
         if epoch_test_loss < best_loss and epoch>=3:
             best_loss = epoch_test_loss
@@ -315,7 +307,7 @@ def eval_model(model, test_loader):
     return mean_squared_error(y_true, y_pred),r2_score(y_true, y_pred)
 
 
-# if __name__ == '__main__':
+
 def run(gParameters):
 
     """hyper-parameter"""

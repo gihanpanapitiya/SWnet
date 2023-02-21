@@ -11,7 +11,6 @@ from tqdm import tqdm
 import time
 from datetime import datetime
 import sys
-# sys.path.append('..')
 import pickle
 import argparse
 import untils.until as untils
@@ -66,11 +65,9 @@ required = None
 
 
 torch.manual_seed(0)
-# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 device_ids = [ int(os.environ["CUDA_VISIBLE_DEVICES"]) ]
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
-
 CANDLE_DATA_DIR=os.getenv("CANDLE_DATA_DIR")
 
 # Create a custom logger

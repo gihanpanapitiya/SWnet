@@ -11,12 +11,10 @@ from tqdm import tqdm
 import time
 from datetime import datetime
 import sys
-#sys.path.append('..')
 import pickle
 import argparse
 import untils.until as untils
 import random
-# import swn as bmk
 import candle
 import json
 import logging
@@ -65,10 +63,7 @@ required = None
 dt = datetime.now() 
 file_name = os.path.basename(__file__)[:-3]
 date = dt.strftime('_%Y%m%d_%H_%M_%S')
-# logname = 'log/logs/' + file_name +'_r' + str(radius) +'_s' + str(split_case)+ date + '.txt'   # gihan
 
-# os.makedirs(os.path.join(output_dir, 'log/logs/'), exist_ok=True)
-# logname = os.path.join(output_dir, logname) 
 
 def setup_seed(seed):
     torch.manual_seed(seed)
@@ -80,7 +75,6 @@ def setup_seed(seed):
 setup_seed(0)
 
 
-# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 device_ids = [ int(os.environ["CUDA_VISIBLE_DEVICES"]) ]
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 CANDLE_DATA_DIR=os.getenv("CANDLE_DATA_DIR")
