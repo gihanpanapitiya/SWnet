@@ -16,7 +16,7 @@ singularity build --fakeroot SWnet.sif SWnet.def
 to build the container. 
 
 ### Training 
-
+---
 There are three training tasks: 1. Self-attention model using GDSC data, 2. Self-attention model using CCLE data, 3. Multi-task model using GDSC data. These tasks can be executed by using the commands,
 
 ```
@@ -24,6 +24,8 @@ There are three training tasks: 1. Self-attention model using GDSC data, 2. Self
 - singularity exec --nv SWnet.sif train_self_attn_ccle.sh $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR 
 - singularity exec --nv SWnet.sif train_multi_task.sh $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR 
 ```
+The default input parameters of the models are given in the swnet_gdsc_model.txt, swnet_ccle_model.txt and swnet_mt_model.txt respectively.
+
 
 These training scipts also runs the evaluation for test sets. Additionally, the evaluation can be run seperately for self-attention models using, 
 
@@ -32,6 +34,7 @@ These training scipts also runs the evaluation for test sets. Additionally, the 
 - singularity exec --nv SWnet.sif eval_self_attn_ccle.sh $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR 
 ```
 
+The outputs and the logs get written to the output_dir specified in the swnet_gdsc_model.txt, swnet_ccle_model.txt and swnet_mt_model.txt.
 
 
 
