@@ -307,7 +307,10 @@ def eval_model(model, test_loader):
         y_true += y.cpu().detach().numpy().tolist()
         y_pred_step = model(rma, var, drug_id)
         y_pred += y_pred_step.cpu().detach().numpy().tolist()
-    return mean_squared_error(y_true, y_pred),r2_score(y_true, y_pred)
+
+
+    df_res = pd.DataFrame(zip(y_true, y_pred), columns=['true', 'pred'])
+    return mean_squared_error(y_true, y_pred),r2_score(y_true, y_pred), df_res
 
 
 
@@ -345,7 +348,6 @@ def run(gParameters):
     download_data = gParameters['download_data']
     base_path=os.path.join(CANDLE_DATA_DIR, gParameters['model_name'],'Data')
 
-
     untils.get_data(data_url, base_path, download_data)
 
 
@@ -353,12 +355,7 @@ def run(gParameters):
     dt = datetime.now()  # 创建一个datetime类对象
     file_name = os.path.basename(__file__)[:-3]
     date = dt.strftime('_%Y%m%d_%H_%M_%S')
-    # -- gihan --
-    # logname = '../log/logs/' + file_name +'_r' + str(radius) +'_s' + str(split_case)+ date + '.txt'
-    # logsaved = True
-    # if logsaved == True:
-    #     log = open(logname, mode='wt')
-    # -- gihan --
+
     log.info(file_name + date + '.csv \n')
     log.info('radius = {:d},split case = {:d}\n'.format(radius, split_case))
     print("Log starts!")
@@ -394,6 +391,8 @@ def run(gParameters):
     data = pd.read_csv(base_path+"/GDSC/GDSC_data/cell_drug_labels.csv", index_col=0)
     train_id, test_id = untils.split_data(data, split_case=split_case, ratio=0.9,
                                           cell_names=GDSC_cell_names)
+    # save test data for benchmarking purposes
+    test_id.to_csv(os.path.join(output_dir, 'test_data.csv'))
 
     dataset_sizes = {'train': len(train_id), 'test': len(test_id)}
     print(dataset_sizes['train'], dataset_sizes['test'])
@@ -431,9 +430,11 @@ def run(gParameters):
     # model_ft.load_state_dict(torch.load("../log/pth/XXX.pth"))
     # mse, r2 = eval_model(model_ft)
     # print('mse:{},r2:{}'.format(mse, r2))
-    mse, r2 = eval_model(model_ft, test_loader)
+    mse, r2, df_res = eval_model(model_ft, test_loader)
     print('mse:{},r2:{}'.format(mse, r2))
     log.info('mse:{},r2:{}'.format(mse, r2))
+    df_res.to_csv(os.path.join(output_dir, "test_predictions.csv"), index=False)
+
     # log.close()
 
     test_scores = {"mse": mse, "r2":r2 }

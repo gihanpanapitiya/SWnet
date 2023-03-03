@@ -20,6 +20,8 @@ import random
 import candle
 import json
 import logging
+from rdkit import Chem
+
 
 # torch.manual_seed(0)
 file_path = os.path.dirname(os.path.realpath(__file__))
@@ -290,10 +292,11 @@ def train_model(model, train_loader, test_loader, dataset_sizes, criterion, opti
     print("Save model done!")
     return model
 
-def eval_model(model, test_loader):
+def eval_model(model, test_loader, ccle_smiles):
     from sklearn.metrics import r2_score, mean_squared_error
     y_pred = []
     y_true = []
+    smiles = []
     model.eval()
     for step, (rma, var, drug_id,y) in tqdm(enumerate(test_loader)):
         rma = rma.cuda(device=device_ids[0])
@@ -304,8 +307,16 @@ def eval_model(model, test_loader):
         y_true += y.cpu().detach().numpy().tolist()
         y_pred_step = model(rma, var, drug_id)
         y_pred += y_pred_step.cpu().detach().numpy().tolist()
-    return mean_squared_error(y_true, y_pred),r2_score(y_true, y_pred)
+        smiles.extend( [ccle_smiles.loc[di, 'smiles'] for di in drug_id] )
+        print(drug_id)
 
+    df_res = pd.DataFrame(zip(np.array(y_true).ravel(), np.array(y_pred).ravel(), smiles ), columns=['true', 'pred', 'smiles'])
+    return mean_squared_error(y_true, y_pred),r2_score(y_true, y_pred), df_res
+
+
+def add_natoms(df):
+    natoms = [Chem.MolFromSmiles(i).GetNumAtoms() for i in df.smiles]
+    df['natoms'] = natoms
 
 
 def run(gParameters):
@@ -326,6 +337,7 @@ def run(gParameters):
     data_url = gParameters['data_url']
     download_data = gParameters['download_data']
     base_path=os.path.join(CANDLE_DATA_DIR, gParameters['model_name'], 'Data')
+    train_subset_size =  gParameters['train_subset']
 
 
     """log"""
@@ -368,7 +380,11 @@ def run(gParameters):
 
     """split dataset"""
     data = pd.read_csv(base_path+"/CCLE/CCLE_Data/CCLE_cell_drug_labels.csv", index_col=0)
+    ccle_smiles = pd.read_csv(base_path+"/CCLE/CCLE_Data/CCLE_smiles.csv", index_col=0)
+    
     train_id, test_id = untils.split_data(data,split_case=split_case, ratio=0.9,cell_names=cell_names) # gihan
+    if train_subset_size:
+        train_id = train_id.iloc[:train_subset_size, :]
 
     dataset_sizes = {'train': len(train_id), 'test': len(test_id)}
     print(dataset_sizes['train'], dataset_sizes['test'])
@@ -401,13 +417,15 @@ def run(gParameters):
                            output_dir, file_name, num_epochs=num_epochs)
 
 
-    mse, r2 = eval_model(model_ft, test_loader)
+    mse, r2, df_res = eval_model(model_ft, test_loader, ccle_smiles)
     print('mse:{},r2:{}'.format(mse, r2))
     log.info('mse:{},r2:{}'.format(mse, r2))
     
     test_scores = {"mse": mse, "r2":r2 }
     with open( os.path.join(output_dir,"test_scores.json"), "w", encoding="utf-8") as f:
         json.dump(test_scores, f, ensure_ascii=False, indent=4)
+    add_natoms(df_res)
+    df_res.to_csv(os.path.join(output_dir,"test_predictions.csv"), index=False)
 
     """Save the gene weights """
     fuse = pd.DataFrame(model_ft.fuse_weight.cpu().detach().numpy(),
