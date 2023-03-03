@@ -60,6 +60,10 @@ additional_definitions = [
     {'name': 'train_subset',
      'type': int,
      'help': '.....'
+     },
+    {'name': 'download_data',
+     'type': bool,
+     'help': '.....'
      }
 ]
 
@@ -312,7 +316,7 @@ def eval_model(model, test_loader, ccle_smiles):
         y_pred_step = model(rma, var, drug_id)
         y_pred += y_pred_step.cpu().detach().numpy().tolist()
         smiles.extend( [ccle_smiles.loc[di, 'smiles'] for di in drug_id] )
-        print(drug_id)
+        #print(drug_id)
 
     df_res = pd.DataFrame(zip(np.array(y_true).ravel(), np.array(y_pred).ravel(), smiles ), columns=['true', 'pred', 'smiles'])
     return mean_squared_error(y_true, y_pred),r2_score(y_true, y_pred), df_res
@@ -351,7 +355,7 @@ def run(gParameters):
 
     log.info(file_name + date + '.csv \n')
     log.info('radius = {:d},split case = {:d}\n'.format(radius, split_case))
-    print("Log is start!")
+    print("Log started!")
 
     untils.get_data(data_url, base_path, download_data)
 
