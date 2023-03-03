@@ -12,5 +12,5 @@ dim=50
 layer_gnn=3
 data_url='https://github.com/zuozhaorui/SWnet/trunk/data'
 output_dir = 'Output'
-download_data = False
+download_data = True
 train_subset = 100

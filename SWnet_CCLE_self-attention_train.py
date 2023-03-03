@@ -56,6 +56,10 @@ additional_definitions = [
      },
     {'name': 'data_url',
      'type': str
+     },
+    {'name': 'train_subset',
+     'type': int,
+     'help': '.....'
      }
 ]
 
