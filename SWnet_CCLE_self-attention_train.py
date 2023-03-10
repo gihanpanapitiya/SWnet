@@ -290,10 +290,13 @@ def train_model(model, train_loader, test_loader, dataset_sizes, criterion, opti
     print("Save model done!")
     return model
 
-def eval_model(model, test_loader):
+
+
+def eval_model(model, test_loader, ccle_smiles):
     from sklearn.metrics import r2_score, mean_squared_error
     y_pred = []
     y_true = []
+    smiles = []
     model.eval()
     for step, (rma, var, drug_id,y) in tqdm(enumerate(test_loader)):
         rma = rma.cuda(device=device_ids[0])
@@ -304,9 +307,10 @@ def eval_model(model, test_loader):
         y_true += y.cpu().detach().numpy().tolist()
         y_pred_step = model(rma, var, drug_id)
         y_pred += y_pred_step.cpu().detach().numpy().tolist()
+        smiles.extend( [ccle_smiles.loc[di, 'smiles'] for di in drug_id] )
 
-        
-    return mean_squared_error(y_true, y_pred),r2_score(y_true, y_pred)
+    df_res = pd.DataFrame(zip(np.array(y_true).ravel(), np.array(y_pred).ravel(), smiles ), columns=['true', 'pred', 'smiles'])
+    return mean_squared_error(y_true, y_pred),r2_score(y_true, y_pred), df_res
 
 
 
