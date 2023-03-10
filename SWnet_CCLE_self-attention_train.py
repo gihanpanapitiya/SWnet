@@ -16,6 +16,7 @@ import sys
 import pickle
 import argparse
 import untils.until as untils
+from rdkit import Chem
 import random
 import candle
 import json
@@ -291,6 +292,9 @@ def train_model(model, train_loader, test_loader, dataset_sizes, criterion, opti
     return model
 
 
+def add_natoms(df):
+    natoms = [Chem.MolFromSmiles(i).GetNumAtoms() for i in df.smiles]
+    df['natoms'] = natoms
 
 def eval_model(model, test_loader, ccle_smiles):
     from sklearn.metrics import r2_score, mean_squared_error
