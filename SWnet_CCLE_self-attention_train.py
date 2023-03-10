@@ -407,13 +407,16 @@ def run(gParameters):
                            output_dir, file_name, num_epochs=num_epochs)
 
 
-    mse, r2 = eval_model(model_ft, test_loader)
+
+    mse, r2, df_res = eval_model(model_ft, test_loader, ccle_smiles)
     print('mse:{},r2:{}'.format(mse, r2))
     log.info('mse:{},r2:{}'.format(mse, r2))
     
     test_scores = {"mse": mse, "r2":r2 }
     with open( os.path.join(output_dir,"test_scores.json"), "w", encoding="utf-8") as f:
         json.dump(test_scores, f, ensure_ascii=False, indent=4)
+    add_natoms(df_res)
+    df_res.to_csv(os.path.join(output_dir,"test_predictions.csv"), index=False)
 
     """Save the gene weights """
     fuse = pd.DataFrame(model_ft.fuse_weight.cpu().detach().numpy(),
