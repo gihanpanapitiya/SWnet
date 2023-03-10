@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 import time
-from datetime import datetimes
+from datetime import datetime
 import sys
 import pickle
 import argparse
@@ -378,6 +378,7 @@ def run(gParameters):
 
     """split dataset"""
     data = pd.read_csv(base_path+"/CCLE/CCLE_Data/CCLE_cell_drug_labels.csv", index_col=0)
+    ccle_smiles = pd.read_csv(base_path+"/CCLE/CCLE_Data/CCLE_smiles.csv", index_col=0)
     train_id, test_id = untils.split_data(data,split_case=split_case, ratio=0.9,cell_names=cell_names) # gihan
 
     dataset_sizes = {'train': len(train_id), 'test': len(test_id)}
