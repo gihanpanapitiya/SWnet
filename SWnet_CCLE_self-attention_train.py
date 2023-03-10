@@ -304,6 +304,8 @@ def eval_model(model, test_loader):
         y_true += y.cpu().detach().numpy().tolist()
         y_pred_step = model(rma, var, drug_id)
         y_pred += y_pred_step.cpu().detach().numpy().tolist()
+
+        
     return mean_squared_error(y_true, y_pred),r2_score(y_true, y_pred)
 
 
