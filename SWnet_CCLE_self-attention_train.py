@@ -417,7 +417,7 @@ def run(gParameters):
     print('mse:{},r2:{}'.format(mse, r2))
     log.info('mse:{},r2:{}'.format(mse, r2))
     
-    test_scores = {"mse": mse, "r2":r2 }
+    test_scores = {"loss": mse, "r2":r2 }
     with open( os.path.join(output_dir,"test_scores.json"), "w", encoding="utf-8") as f:
         json.dump(test_scores, f, ensure_ascii=False, indent=4)
     add_natoms(df_res)
