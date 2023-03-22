@@ -417,7 +417,7 @@ def run(gParameters):
     print('mse:{},r2:{}'.format(mse, r2))
     log.info('mse:{},r2:{}'.format(mse, r2))
     
-    test_scores = {"loss": mse, "r2":r2 }
+    test_scores = {"val_loss": mse, "r2":r2 }
     with open( os.path.join(output_dir,"test_scores.json"), "w", encoding="utf-8") as f:
         json.dump(test_scores, f, ensure_ascii=False, indent=4)
     add_natoms(df_res)
@@ -431,6 +431,8 @@ def run(gParameters):
     fuse_name = os.path.join(output_dir, 'log/logs/gene_weights/' + str(round(mse, 4)) + '_' + file_name + '_r' + str(radius) + '_s' + str(split_case) + '.csv')
     fuse.to_csv(fuse_name)
     print("Save the gene weights done!")
+
+    return test_scores, test_scores
 
 
 class SWnet_candle(candle.Benchmark):
