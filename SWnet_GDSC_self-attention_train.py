@@ -18,6 +18,7 @@ import random
 import candle
 import json
 import logging
+from rdkit import Chem
 
 file_path = os.path.dirname(os.path.realpath(__file__))
 additional_definitions = [
@@ -54,8 +55,10 @@ additional_definitions = [
      },
     {'name': 'download_data',
      'type': bool
-     }
-     
+     },
+    {'name': 'data_split_seed',
+     'type': int
+     },     
 ]
 
 required = None
@@ -293,10 +296,15 @@ def train_model(model, train_loader, test_loader, dataset_sizes, criterion, opti
     print("Save model done!")
     return model
 
-def eval_model(model, test_loader):
+def add_natoms(df):
+    natoms = [Chem.MolFromSmiles(i).GetNumAtoms() for i in df.smiles]
+    df['natoms'] = natoms
+
+def eval_model(model, test_loader, gdsc_smiles):
     from sklearn.metrics import r2_score, mean_squared_error
     y_pred = []
     y_true = []
+    smiles = []
     model.eval()
     for step, (rma, var, drug_id,y) in tqdm(enumerate(test_loader)):
         rma = rma.cuda(device=device_ids[0])
@@ -307,7 +315,13 @@ def eval_model(model, test_loader):
         y_true += y.cpu().detach().numpy().tolist()
         y_pred_step = model(rma, var, drug_id)
         y_pred += y_pred_step.cpu().detach().numpy().tolist()
-    return mean_squared_error(y_true, y_pred),r2_score(y_true, y_pred)
+        drug_id=drug_id.cpu().detach().numpy().tolist()
+        # print("drug_id:  ", drug_id)
+        smiles.extend( [gdsc_smiles.loc[di, 'smiles'] for di in drug_id] )
+
+    df_res = pd.DataFrame(zip(np.array(y_true).ravel(), np.array(y_pred).ravel(), smiles ), columns=['true', 'pred', 'smiles'])
+
+    return mean_squared_error(y_true, y_pred),r2_score(y_true, y_pred), df_res
 
 
 def run(gParameters):
@@ -382,8 +396,9 @@ def run(gParameters):
     """split dataset"""
     # data = pd.read_csv(base_path+"data/GDSC/GDSC_data/cell_drug_labels.csv", index_col=0)
     data = pd.read_csv(base_path+"/GDSC/GDSC_data/cell_drug_labels.csv", index_col=0)
-    train_id, test_id = untils.split_data(data,split_case=split_case, ratio=0.9,
-                                   cell_names=GDSC_cell_names)
+    gdsc_smiles = pd.read_csv(base_path+"/GDSC/GDSC_data/GDSC_smiles.csv", index_col=0)
+    train_id, val_id, test_id = untils.split_data(data,split_case=split_case, ratio=0.8,
+                                   cell_names=GDSC_cell_names, random_state=gParameters['data_split_seed'])
 
     dataset_sizes = {'train': len(train_id), 'test': len(test_id)}
     print(dataset_sizes['train'], dataset_sizes['test'])
@@ -391,10 +406,12 @@ def run(gParameters):
     # log.flush()
 
     trainDataset = CreateDataset(rma, var, train_id)
+    valDataset = CreateDataset(rma, var, val_id)
     testDataset = CreateDataset(rma, var, test_id)
 
     # Dataloader
     train_loader = Data.DataLoader(dataset=trainDataset, batch_size=BATCH_SIZE * len(device_ids), shuffle=True)
+    val_loader = Data.DataLoader(dataset=valDataset, batch_size=BATCH_SIZE * len(device_ids), shuffle=True)
     test_loader = Data.DataLoader(dataset=testDataset, batch_size=BATCH_SIZE * len(device_ids), shuffle=True)
 
     """create SWnet model"""
@@ -413,11 +430,11 @@ def run(gParameters):
     """start training model !"""
     print("start training model")
 
-    model_ft = train_model(model_ft, train_loader, test_loader, dataset_sizes, criterion, optimizer_ft, exp_lr_scheduler,
+    model_ft = train_model(model_ft, train_loader, val_loader, dataset_sizes, criterion, optimizer_ft, exp_lr_scheduler,
                            output_dir, file_name, num_epochs=num_epochs)
 
 
-    mse, r2 = eval_model(model_ft, test_loader)
+    mse, r2, df_res = eval_model(model_ft, test_loader, gdsc_smiles)
     print('mse:{},r2:{}'.format(mse, r2))
     log.info('mse:{},r2:{}'.format(mse, r2))
     #log.close()
@@ -427,6 +444,9 @@ def run(gParameters):
     with open( os.path.join(output_dir,"test_scores.json"), "w", encoding="utf-8") as f:
             json.dump(test_scores, f, ensure_ascii=False, indent=4)
             
+    add_natoms(df_res)
+    df_res.to_csv(os.path.join(output_dir,"test_predictions.csv"), index=False)
+
     """Save the gene weights"""
     fuse = pd.DataFrame(model_ft.fuse_weight.cpu().detach().numpy(),
                         index=GDSC_smiles_index, columns=GDSC_gene)

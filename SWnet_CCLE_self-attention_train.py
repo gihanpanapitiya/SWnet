@@ -311,6 +311,7 @@ def eval_model(model, test_loader, ccle_smiles):
         y_true += y.cpu().detach().numpy().tolist()
         y_pred_step = model(rma, var, drug_id)
         y_pred += y_pred_step.cpu().detach().numpy().tolist()
+        drug_id=drug_id.cpu().detach().numpy().tolist()
         smiles.extend( [ccle_smiles.loc[di, 'smiles'] for di in drug_id] )
 
     df_res = pd.DataFrame(zip(np.array(y_true).ravel(), np.array(y_pred).ravel(), smiles ), columns=['true', 'pred', 'smiles'])

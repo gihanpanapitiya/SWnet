@@ -14,12 +14,13 @@ def get_drug_dict(smiles):
         drug_dict[drug_index[i]] = i
     return drug_dict
 
-def split_data(data,split_case,ratio,cell_names):
+def split_data(data,split_case,ratio,cell_names, random_state):
     data = data[data["labels"].notnull()]
     data = data[~data['drug_id'].isin([185, 1021])]  # except drug id
     # Split data sets randomly
     if split_case == 0:
-        train_id, test_id = train_test_split(data, test_size=1 - ratio, random_state=0)
+        train_id, test_id = train_test_split(data, test_size=1-ratio, random_state=random_state)
+        val_id, test_id = train_test_split(test_id, test_size=0.5, random_state=random_state)
 
     # split data sets by cells
     elif split_case == 1:
@@ -35,7 +36,7 @@ def split_data(data,split_case,ratio,cell_names):
 
     # train_id, test_id = train_test_split(data, test_size=1 - ratio, random_state=0)
     # train_id, test_id = train_id[0:100], test_id[0:100]
-    return train_id, test_id
+    return train_id, val_id, test_id
 
 def load_GDSC_data(base_path):
     # GDSC_rma_path = base_path+"data/GDSC/GDSC_data/GDSC_rma.csv"   # original
