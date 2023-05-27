@@ -21,6 +21,11 @@ import random
 import candle
 import json
 import logging
+# from preprocess_drug_graph import prepare_graph_data
+from preprocess_drug_similarity import prepare_similarity_data
+import urllib
+from preprocess import candle_preprocess
+from sklearn.model_selection import train_test_split
 
 # torch.manual_seed(0)
 file_path = os.path.dirname(os.path.realpath(__file__))
@@ -55,6 +60,9 @@ additional_definitions = [
      },
     {'name': 'data_url',
      'type': str
+     },
+    {'name': 'data_split_seed',
+     'type': int
      }
 ]
 
@@ -81,8 +89,13 @@ log.setLevel(logging.INFO)
 
 
 # graph dataset
+# def load_tensor(file_name, dtype):
+#     return [dtype(d).to(device) for d in np.load(file_name + '.npy', allow_pickle=True)]
+
 def load_tensor(file_name, dtype):
-    return [dtype(d).to(device) for d in np.load(file_name + '.npy', allow_pickle=True)]
+    with open(file_name, 'rb') as f:
+        file = pickle.load(f)
+    return [dtype(d).to(device) for d in file]
 
 def load_pickle(file_name):
     with open(file_name, 'rb') as f:
@@ -110,9 +123,10 @@ class CreateDataset(Dataset):
 
 class Model(nn.Module):
     def __init__(self,dim,layer_gnn,drugs_num, n_fingerprint, similarity_softmax,
-            GDSC_drug_dict, graph_dataset):
+            GDSC_drug_dict, graph_dataset, n_genes):
         super(Model, self).__init__()
-        self.fuse_weight = torch.nn.Parameter(torch.FloatTensor(drugs_num, 1478), requires_grad=True).to(device)
+        self.n_genes = n_genes
+        self.fuse_weight = torch.nn.Parameter(torch.FloatTensor(drugs_num, n_genes), requires_grad=True).to(device)
         self.fuse_weight.data.normal_(0.5, 0.25)
 
         self.embed_fingerprint = nn.Embedding(n_fingerprint, dim)
@@ -136,7 +150,8 @@ class Model(nn.Module):
             nn.BatchNorm1d(5),
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=5, stride=5),
-            nn.Linear(71, 32),
+            # nn.Linear(71, 32), # for original
+            nn.Linear(70, 32), # for candle ccle
             nn.ReLU(),
             nn.Dropout(p=0.1)
         )
@@ -174,12 +189,12 @@ class Model(nn.Module):
         except:
             drug_ids = drug_ids
 
-        com = torch.zeros(len(drug_ids), 1478).to(device)
+        com = torch.zeros(len(drug_ids), self.n_genes).to(device)
 
         for i in range(len(drug_ids)):
             com[i] = torch.mv(fuse_weight.permute(1, 0), self.similarity_softmax[self.GDSC_drug_dict[drug_ids[i]]]) * var[i]
 
-        return com.view(-1,1478)
+        return com.view(-1,self.n_genes)
 
     def combine(self, rma, var,drug_id):
         self.fuse_weight.data = torch.clamp(self.fuse_weight, 0, 1)
@@ -222,7 +237,7 @@ def train_model(model, train_loader, test_loader, dataset_sizes, criterion, opti
 
     best_model_wts = copy.deepcopy(model.state_dict())
     best_loss = 10.0
-
+    best_epoch = -1
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
         print('-' * 10)
@@ -270,8 +285,11 @@ def train_model(model, train_loader, test_loader, dataset_sizes, criterion, opti
         if epoch_test_loss < best_loss and epoch>=3:
             best_loss = epoch_test_loss
             best_model_wts = copy.deepcopy(model.state_dict())
-
+            best_epoch=epoch
+        
+    print("best epoch: ", best_epoch)
     time_elapsed = time.time() - since
+    print("train time: ", time_elapsed)
     print('Training complete in {:.0f}m {:.0f}s'.format(
         time_elapsed // 60, time_elapsed % 60))
     log.info('Training complete in {:.0f}m {:.0f}s'.format(
@@ -289,7 +307,7 @@ def train_model(model, train_loader, test_loader, dataset_sizes, criterion, opti
     pth_name = os.path.join(output_dir, pth_name)
     torch.save(model.state_dict(), pth_name)
     print("Save model done!")
-    return model
+    return model, best_model_wts
 
 
 def add_natoms(df):
@@ -316,6 +334,32 @@ def eval_model(model, test_loader, ccle_smiles):
     df_res = pd.DataFrame(zip(np.array(y_true).ravel(), np.array(y_pred).ravel(), smiles ), columns=['true', 'pred', 'smiles'])
     return mean_squared_error(y_true, y_pred),r2_score(y_true, y_pred), df_res
 
+def download_csa_data(opt):
+
+    csa_data_folder = os.path.join(CANDLE_DATA_DIR, opt['model_name'], 'Data', 'csa_data', 'raw_data')
+    splits_dir = os.path.join(csa_data_folder, 'splits') 
+    x_data_dir = os.path.join(csa_data_folder, 'x_data')
+    y_data_dir = os.path.join(csa_data_folder, 'y_data')
+
+    if not os.path.exists(csa_data_folder):
+        print('creating folder: %s'%csa_data_folder)
+        os.makedirs(csa_data_folder)
+        os.mkdir( splits_dir  )
+        os.mkdir( x_data_dir  )
+        os.mkdir( y_data_dir  )
+    
+
+    for file in ['CCLE_all.txt', 'CCLE_split_0_test.txt', 'CCLE_split_0_train.txt', 'CCLE_split_0_val.txt']:
+        urllib.request.urlretrieve(f'https://ftp.mcs.anl.gov/pub/candle/public/improve/benchmarks/single_drug_drp/csa_data/splits/{file}',
+        splits_dir+f'/{file}')
+
+    for file in ['cancer_mutation_count.txt', 'drug_SMILES.txt','drug_ecfp4_512bit.txt', 'cancer_gene_expression.txt']:
+        urllib.request.urlretrieve(f'https://ftp.mcs.anl.gov/pub/candle/public/improve/benchmarks/single_drug_drp/csa_data/x_data/{file}',
+        x_data_dir+f'/{file}')
+
+    for file in ['response.txt']:
+        urllib.request.urlretrieve(f'https://ftp.mcs.anl.gov/pub/candle/public/improve/benchmarks/single_drug_drp/csa_data/y_data/{file}',
+        y_data_dir+f'/{file}')
 
 
 def run(gParameters):
@@ -335,7 +379,7 @@ def run(gParameters):
     output_dir = gParameters['output_dir']
     data_url = gParameters['data_url']
     download_data = gParameters['download_data']
-    base_path=os.path.join(CANDLE_DATA_DIR, gParameters['model_name'], 'Data')
+    data_path=os.path.join(CANDLE_DATA_DIR, gParameters['model_name'], 'Data')
 
 
     """log"""
@@ -347,10 +391,50 @@ def run(gParameters):
     log.info('radius = {:d},split case = {:d}\n'.format(radius, split_case))
     print("Log is start!")
 
-    untils.get_data(data_url, base_path, download_data)
+    if gParameters['data_type'] == 'original':
+
+        untils.get_data(data_url, data_path, download_data)
+        n_genes=1478
+
+
+
+    elif gParameters['data_type'] == 'ccle_candle':
+        st_pp = time.time() 
+        print("Creating data for candle")
+        untils.get_data(data_url, os.path.join(data_path, 'swn_original'), True)
+    
+        if not os.path.exists(data_path+'/csa_data'):
+            download_csa_data(gParameters)
+        
+        # for p in ['CCLE/CCLE_Data', 'CCLE/CCLE_Data/drug_similarity', 'CCLE/CCLE_Data/graph_data', f'CCLE/CCLE_Data/graph_data/radius_{radius}']:
+        for p in ['CCLE/CCLE_Data', 'CCLE/drug_similarity', 'CCLE/graph_data']:
+            path = os.path.join(data_path, p)
+            if not os.path.exists(path):
+                os.makedirs(path)
+            
+        # smi_save_path = os.path.join(data_path,'CCLE/CCLE_Data', 'CCLE_smiles.csv')
+        # expr_save_path = os.path.join(data_path,'CCLE/CCLE_Data', 'CCLE_RNAseq.csv')
+        # mut_save_path = os.path.join(data_path,'CCLE/CCLE_Data', 'CCLE_DepMap.csv')
+        # data_save_path = os.path.join(data_path,'CCLE/CCLE_Data', 'CCLE_cell_drug_labels.csv')
+        # ext_gene_file = os.path.join(data_path,'CCLE/CCLE_data', 'CCLE_cell_drug_labels.csv')
+        ext_gene_file = os.path.join(data_path, 'swn_original','CCLE/CCLE_Data/CCLE_DepMap.csv')
+  
+        candle_preprocess(data_type='CCLE', 
+                         metric='ic50', 
+                         data_path=data_path,
+                         ext_gene_file=ext_gene_file)
+
+        df_mut = pd.read_csv(os.path.join(data_path,'CCLE/CCLE_Data', 'CCLE_RNAseq.csv'), index_col=0)
+        n_genes = len(df_mut.columns)
+
+
+        # prepare_graph_data(data_path, gParameters)
+        os.system(f"python preprocess_drug_graph.py --radius {radius} --data_path {data_path}")
+        prepare_similarity_data(data_path)
+        pp_time = time.time() - st_pp
 
     """Load preprocessed drug graph data."""
-    dir_input = (base_path+'/CCLE/graph_data/' + 'radius' + str(radius) + '/')
+    dir_input = (data_path+'/CCLE/graph_data/' + 'radius' + str(radius) + '/')
     compounds = load_tensor(dir_input + 'compounds', torch.LongTensor)
     adjacencies = load_tensor(dir_input + 'adjacencies', torch.FloatTensor)
     fingerprint_dict = load_pickle(dir_input + 'fingerprint_dict.pickle')
@@ -360,7 +444,7 @@ def run(gParameters):
     graph_dataset = list(zip(compounds, adjacencies))
 
     """Load CCLE data."""
-    rma, var, smiles = untils.load_CCLE_data(base_path)
+    rma, var, smiles = untils.load_CCLE_data(data_path)
 
     smiles_vals = smiles["smiles"].values
     smiles_index = smiles.index
@@ -372,14 +456,31 @@ def run(gParameters):
 
     """Load CCLE drug similarity data."""
 
-    data = pd.read_csv(base_path+"/CCLE/drug_similarity/CCLE_drug_similarity.csv", header=None)
-    similarity_softmax = torch.from_numpy(data.to_numpy().astype(np.float32))
+    drug_similarity = pd.read_csv(data_path+"/CCLE/drug_similarity/CCLE_drug_similarity.csv", header=None)
+    similarity_softmax = torch.from_numpy(drug_similarity.to_numpy().astype(np.float32))
     similarity_softmax = similarity_softmax.to(device)
 
     """split dataset"""
-    data = pd.read_csv(base_path+"/CCLE/CCLE_Data/CCLE_cell_drug_labels.csv", index_col=0)
-    ccle_smiles = pd.read_csv(base_path+"/CCLE/CCLE_Data/CCLE_smiles.csv", index_col=0)
-    train_id, test_id = untils.split_data(data,split_case=split_case, ratio=0.9,cell_names=cell_names) # gihan
+    data = pd.read_csv(data_path+"/CCLE/CCLE_Data/CCLE_cell_drug_labels.csv", index_col=0)
+    ccle_smiles = pd.read_csv(data_path+"/CCLE/CCLE_Data/CCLE_smiles.csv", index_col=0)
+
+    if gParameters['data_type'] == 'original':
+        train_id, test_id = untils.split_data(data,split_case=split_case, ratio=0.9,cell_names=cell_names) # gihan
+    elif gParameters['data_type'] == 'ccle_candle':
+        if gParameters['data_split_seed'] > -1:
+            all_id = pd.read_csv(data_path+'/CCLE/CCLE_Data/CCLE_cell_drug_labels.csv')
+            all_id = all_id.sort_values(by='cell_line_id')
+            all_id.reset_index(drop=True, inplace=True)
+            train_id, val_id = train_test_split(all_id, test_size=0.2, random_state=gParameters['data_split_seed'])
+            test_id, val_id = train_test_split(val_id, test_size=0.5, random_state=gParameters['data_split_seed'])
+            train_id.reset_index(drop=True, inplace=True)
+            test_id.reset_index(drop=True, inplace=True)
+            val_id.reset_index(drop=True, inplace=True)
+        else:
+            train_id = pd.read_csv(data_path+'/CCLE/CCLE_Data/train.csv')
+            val_id = pd.read_csv(data_path+'/CCLE/CCLE_Data/val.csv')
+            test_id = pd.read_csv(data_path+'/CCLE/CCLE_Data/test.csv')
+            
 
     dataset_sizes = {'train': len(train_id), 'test': len(test_id)}
     print(dataset_sizes['train'], dataset_sizes['test'])
@@ -387,15 +488,17 @@ def run(gParameters):
     # log.flush()
 
     trainDataset = CreateDataset(rma, var, train_id)
+    valDataset = CreateDataset(rma, var, val_id)
     testDataset = CreateDataset(rma, var, test_id)
 
     # Dataloader
     train_loader = Data.DataLoader(dataset=trainDataset, batch_size=BATCH_SIZE * len(device_ids), shuffle=True)
-    test_loader = Data.DataLoader(dataset=testDataset, batch_size=BATCH_SIZE * len(device_ids), shuffle=True)
+    val_loader = Data.DataLoader(dataset=valDataset, batch_size=BATCH_SIZE * len(device_ids), shuffle=False , drop_last=False)
+    test_loader = Data.DataLoader(dataset=testDataset, batch_size=BATCH_SIZE * len(device_ids), shuffle=False, drop_last=False)
 
     """create SWnet model"""
     model_ft = Model(dim, layer_gnn, drugs_num, n_fingerprint, similarity_softmax,
-            GDSC_drug_dict, graph_dataset)  # gihan
+            GDSC_drug_dict, graph_dataset, n_genes)  # gihan
     log.info(str(model_ft))
 
     """cuda"""
@@ -408,31 +511,41 @@ def run(gParameters):
     """start training model !"""
     print("start training model")
 
-    model_ft = train_model(model_ft, train_loader, test_loader, dataset_sizes, criterion, optimizer_ft, exp_lr_scheduler,
+    model_ft, best_weights = train_model(model_ft, train_loader, val_loader, dataset_sizes, criterion, optimizer_ft, exp_lr_scheduler,
                            output_dir, file_name, num_epochs=num_epochs)
 
-
-
-    mse, r2, df_res = eval_model(model_ft, test_loader, ccle_smiles)
-    print('mse:{},r2:{}'.format(mse, r2))
-    log.info('mse:{},r2:{}'.format(mse, r2))
+    print("loading best weights....")
+    model_ft.load_state_dict(best_weights)
+    print("loading best weights done.")
     
-    test_scores = {"val_loss": mse, "r2":r2 }
+    st_test = time.time()
+    test_mse, test_r2, df_res_test = eval_model(model_ft, test_loader, ccle_smiles)
+    test_time = time.time() - st_test
+
+    val_mse, val_r2, _ = eval_model(model_ft, val_loader, ccle_smiles)
+
+    print('test rmse:{},r2:{}'.format(test_mse**.5, test_r2))
+    print('val rmse:{},r2:{}'.format(val_mse**.5, val_r2))
+    # log.info('rmse:{},r2:{}'.format(mse**.5, r2))
+    print("preprocess time: ", pp_time)
+    print("inference time: ", test_time)
+    
+    test_scores = {"val_loss": val_mse, "r2": val_r2 }
     with open( os.path.join(output_dir,"test_scores.json"), "w", encoding="utf-8") as f:
         json.dump(test_scores, f, ensure_ascii=False, indent=4)
-    add_natoms(df_res)
-    df_res.to_csv(os.path.join(output_dir,"test_predictions.csv"), index=False)
+    # add_natoms(df_res)
+    df_res_test.to_csv(os.path.join(output_dir,"test_predictions.csv"), index=False)
 
     """Save the gene weights """
     fuse = pd.DataFrame(model_ft.fuse_weight.cpu().detach().numpy(),
                         index=smiles_index, columns=gene)
 
     os.makedirs(os.path.join(output_dir, "log/logs/gene_weights/"), exist_ok=True)
-    fuse_name = os.path.join(output_dir, 'log/logs/gene_weights/' + str(round(mse, 4)) + '_' + file_name + '_r' + str(radius) + '_s' + str(split_case) + '.csv')
+    fuse_name = os.path.join(output_dir, 'log/logs/gene_weights/' + str(round(test_mse, 4)) + '_' + file_name + '_r' + str(radius) + '_s' + str(split_case) + '.csv')
     fuse.to_csv(fuse_name)
     print("Save the gene weights done!")
 
-    return test_scores, test_scores
+    return test_scores
 
 
 class SWnet_candle(candle.Benchmark):
@@ -464,6 +577,7 @@ if __name__ == '__main__':
     fomatter = logging.Formatter(fmt=' %(name)s :: %(levelname)-8s :: %(message)s')
     handler.setFormatter(fomatter)
     log.addHandler(handler)
+
     scores = run(gParameters)
     print("Done.")
 

@@ -1,7 +1,7 @@
 [Global_Params]
-model_name='SWnet_CCLE'
+model_name='SWnet'
 cuda_name = "cuda:0"
-batch_size=512
+batch_size=64
 lr=0.001
 num_epochs=1
 step_size=150
@@ -13,3 +13,5 @@ layer_gnn=3
 data_url='https://github.com/zuozhaorui/SWnet/trunk/data'
 output_dir = 'Output'
 download_data = True
+data_type = 'ccle_candle'
+data_split_seed=42
