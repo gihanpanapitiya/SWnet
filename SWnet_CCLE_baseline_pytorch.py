@@ -21,7 +21,7 @@ import random
 import candle
 import json
 import logging
-# from preprocess_drug_graph import prepare_graph_data
+from preprocess_drug_graph import prepare_graph_data
 from preprocess_drug_similarity import prepare_similarity_data
 import urllib
 from preprocess import candle_preprocess
@@ -428,8 +428,8 @@ def run(gParameters):
         n_genes = len(df_mut.columns)
 
 
-        # prepare_graph_data(data_path, gParameters)
-        os.system(f"python preprocess_drug_graph.py --radius {radius} --data_path {data_path}")
+        prepare_graph_data(data_path, gParameters)
+        # os.system(f"python preprocess_drug_graph.py --radius {radius} --data_path {data_path}")
         prepare_similarity_data(data_path)
         pp_time = time.time() - st_pp
 
