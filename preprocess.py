@@ -15,12 +15,12 @@ def get_drug_response_data(df, metric):
     return data_smiles_df
 
 
-def sava_split_files(df, file_name):
+def sava_split_files(df, file_name, metric='ic50'):
 
-    tmp = df[['improve_sample_id', 'improve_chem_id', 'ic50']]
+    tmp = df[['improve_sample_id', 'improve_chem_id', metric]]
     tmp = tmp.rename(columns={'improve_sample_id':'cell_line_id',
                         'improve_chem_id':'drug_id',
-                        'ic50':'labels'})
+                        metric:'labels'})
     tmp.to_csv(file_name, index=False)
 
 def candle_preprocess(data_type='CCLE', 
@@ -58,9 +58,9 @@ def candle_preprocess(data_type='CCLE',
     all_df = pd.concat([train_df, val_df, test_df], axis=0)
     all_df.reset_index(drop=True, inplace=True)
 
-    sava_split_files(train_df, data_path+'/CCLE/CCLE_Data/train.csv')
-    sava_split_files(val_df, data_path+'/CCLE/CCLE_Data/val.csv')
-    sava_split_files(test_df, data_path+'/CCLE/CCLE_Data/test.csv')
+    sava_split_files(train_df, data_path+'/CCLE/CCLE_Data/train.csv', metric)
+    sava_split_files(val_df, data_path+'/CCLE/CCLE_Data/val.csv', metric)
+    sava_split_files(test_df, data_path+'/CCLE/CCLE_Data/test.csv', metric)
 
 
 
@@ -101,8 +101,8 @@ def candle_preprocess(data_type='CCLE',
     mut.index.name=None
     mut.to_csv(data_path+'/CCLE/CCLE_Data/CCLE_DepMap.csv')
 
-    all_df=all_df[['improve_sample_id', 'improve_chem_id', 'ic50']]
+    all_df=all_df[['improve_sample_id', 'improve_chem_id', metric]]
     all_df=all_df.rename(columns={'improve_sample_id':'cell_line_id',
                         'improve_chem_id':'drug_id',
-                        'ic50':'labels'})
+                        metric:'labels'})
     all_df.to_csv(data_path+'/CCLE/CCLE_Data/CCLE_cell_drug_labels.csv', index=False)

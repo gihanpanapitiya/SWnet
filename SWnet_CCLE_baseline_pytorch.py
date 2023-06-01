@@ -63,6 +63,9 @@ additional_definitions = [
      },
     {'name': 'data_split_seed',
      'type': int
+     },
+     {'name': 'metric',
+     'type': str
      }
 ]
 
@@ -379,6 +382,7 @@ def run(gParameters):
     output_dir = gParameters['output_dir']
     data_url = gParameters['data_url']
     download_data = gParameters['download_data']
+    metric = gParameters['metric']
     data_path=os.path.join(CANDLE_DATA_DIR, gParameters['model_name'], 'Data')
 
 
@@ -420,7 +424,7 @@ def run(gParameters):
         ext_gene_file = os.path.join(data_path, 'swn_original','CCLE/CCLE_Data/CCLE_DepMap.csv')
   
         candle_preprocess(data_type='CCLE', 
-                         metric='ic50', 
+                         metric=metric, 
                          data_path=data_path,
                          ext_gene_file=ext_gene_file)
 
