@@ -524,6 +524,7 @@ def run(gParameters):
     
     st_test = time.time()
     test_mse, test_r2, df_res_test = eval_model(model_ft, test_loader, ccle_smiles)
+    df_res_test = pd.concat([df_res_test, test_id], axis=1)
     test_time = time.time() - st_test
 
     val_mse, val_r2, _ = eval_model(model_ft, val_loader, ccle_smiles)
