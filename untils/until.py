@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
-
+import urllib
 
 def get_drug_dict(smiles):
     try:
@@ -64,11 +64,17 @@ def load_CCLE_data(base_path):
     return rma, var, smiles
 
 
-def get_data(data_url, cache_subdir, download=True):
+def get_data(data_url, cache_subdir, download=True, svn=False):
     print('downloading data')
     # cache_subdir = os.path.join(CANDLE_DATA_DIR, 'SWnet', 'Data')
     
-    if download:
+    if download and svn:
         os.makedirs(cache_subdir, exist_ok=True)
         os.system(f'svn checkout {data_url} {cache_subdir}')   
         print('downloading done') 
+
+    elif download and svn==False:
+        os.makedirs(cache_subdir, exist_ok=True)
+        ccle_data = os.path.join(cache_subdir,'CCLE/CCLE_Data/')
+        os.makedirs(ccle_data, exist_ok=True)
+        urllib.request.urlretrieve('https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/CCLE/CCLE_Data/CCLE_DepMap.csv', f'{ccle_data}/CCLE_DepMap.csv' )
