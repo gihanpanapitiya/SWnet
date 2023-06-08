@@ -411,7 +411,8 @@ def run(gParameters):
             download_csa_data(gParameters)
         
         # for p in ['CCLE/CCLE_Data', 'CCLE/CCLE_Data/drug_similarity', 'CCLE/CCLE_Data/graph_data', f'CCLE/CCLE_Data/graph_data/radius_{radius}']:
-        for p in ['CCLE/CCLE_Data', 'CCLE/drug_similarity', 'CCLE/graph_data', 'swn_original/CCLE/CCLE_Data']:
+        # for p in ['CCLE/CCLE_Data', 'CCLE/drug_similarity', 'CCLE/graph_data', 'swn_original/CCLE/CCLE_Data']:
+        for p in ['CCLE/CCLE_Data', 'CCLE/drug_similarity', 'CCLE/graph_data']:
             path = os.path.join(data_path, p)
             if not os.path.exists(path):
                 os.makedirs(path)
