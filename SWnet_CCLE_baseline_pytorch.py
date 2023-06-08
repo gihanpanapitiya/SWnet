@@ -405,16 +405,19 @@ def run(gParameters):
     elif gParameters['data_type'] == 'ccle_candle':
         st_pp = time.time() 
         # print("Creating data for candle")
-        untils.get_data(data_url, os.path.join(data_path, 'swn_original'), True, False)
+        # untils.get_data(data_url, os.path.join(data_path, 'swn_original'), True, False)
     
         if not os.path.exists(data_path+'/csa_data'):
             download_csa_data(gParameters)
         
         # for p in ['CCLE/CCLE_Data', 'CCLE/CCLE_Data/drug_similarity', 'CCLE/CCLE_Data/graph_data', f'CCLE/CCLE_Data/graph_data/radius_{radius}']:
-        for p in ['CCLE/CCLE_Data', 'CCLE/drug_similarity', 'CCLE/graph_data']:
+        for p in ['CCLE/CCLE_Data', 'CCLE/drug_similarity', 'CCLE/graph_data', 'swn_original/CCLE/CCLE_Data']:
             path = os.path.join(data_path, p)
             if not os.path.exists(path):
                 os.makedirs(path)
+
+        urllib.request.urlretrieve('https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/CCLE/CCLE_Data/CCLE_DepMap.csv',
+         f'{data_path}/swn_original/CCLE/CCLE_Data/CCLE_DepMap.csv')
             
         # smi_save_path = os.path.join(data_path,'CCLE/CCLE_Data', 'CCLE_smiles.csv')
         # expr_save_path = os.path.join(data_path,'CCLE/CCLE_Data', 'CCLE_RNAseq.csv')
