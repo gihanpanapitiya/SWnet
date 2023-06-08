@@ -405,7 +405,7 @@ def run(gParameters):
     elif gParameters['data_type'] == 'ccle_candle':
         st_pp = time.time() 
         # print("Creating data for candle")
-        # untils.get_data(data_url, os.path.join(data_path, 'swn_original'), True, False)
+        untils.get_data(data_url, os.path.join(data_path, 'swn_original'), True, False)
     
         if not os.path.exists(data_path+'/csa_data'):
             download_csa_data(gParameters)
