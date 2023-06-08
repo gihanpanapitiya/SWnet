@@ -417,7 +417,7 @@ def run(gParameters):
                 os.makedirs(path)
 
         urllib.request.urlretrieve('https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/CCLE/CCLE_Data/CCLE_DepMap.csv',
-         f'{data_path}/swn_original/CCLE/CCLE_Data/CCLE_DepMap.csv')
+        os.path.join(data_path, '/swn_original/CCLE/CCLE_Data/CCLE_DepMap.csv'))
             
         # smi_save_path = os.path.join(data_path,'CCLE/CCLE_Data', 'CCLE_smiles.csv')
         # expr_save_path = os.path.join(data_path,'CCLE/CCLE_Data', 'CCLE_RNAseq.csv')
