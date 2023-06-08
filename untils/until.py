@@ -74,7 +74,7 @@ def get_data(data_url, cache_subdir, download=True, svn=False):
         print('downloading done') 
 
     elif download and svn==False:
-        os.makedirs(cache_subdir, exist_ok=True)
+        # os.makedirs(cache_subdir, exist_ok=True)
         ccle_data = os.path.join(cache_subdir,'CCLE/CCLE_Data/')
         os.makedirs(ccle_data, exist_ok=True)
         urllib.request.urlretrieve('https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/CCLE/CCLE_Data/CCLE_DepMap.csv',
