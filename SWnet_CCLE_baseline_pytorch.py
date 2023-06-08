@@ -416,8 +416,8 @@ def run(gParameters):
             if not os.path.exists(path):
                 os.makedirs(path)
 
-        urllib.request.urlretrieve('https://raw.githubusercontent.com/gihanpanapitiya/SWnet/to_candle/CCLE_DepMap.csv',
-        os.path.join(data_path, 'swn_original/CCLE/CCLE_Data/CCLE_DepMap.csv'))
+        # urllib.request.urlretrieve('https://raw.githubusercontent.com/gihanpanapitiya/SWnet/to_candle/CCLE_DepMap.csv',
+        # os.path.join(data_path, 'swn_original/CCLE/CCLE_Data/CCLE_DepMap.csv'))
 
 
 
