@@ -65,7 +65,6 @@ def load_CCLE_data(base_path):
 
 
 def get_data(data_url, cache_subdir, download=True, svn=False):
-    print('downloading data')
     # cache_subdir = os.path.join(CANDLE_DATA_DIR, 'SWnet', 'Data')
     
     if download and svn:

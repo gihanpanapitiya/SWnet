@@ -66,6 +66,9 @@ additional_definitions = [
      },
      {'name': 'metric',
      'type': str
+     },
+    {'name': 'download_data',
+     'type': bool
      }
 ]
 
@@ -387,13 +390,13 @@ def run(gParameters):
 
 
     """log"""
-    dt = datetime.now()  # 创建一个datetime类对象
+    dt = datetime.now() 
     file_name = os.path.basename(__file__)[:-3]
     date = dt.strftime('_%Y%m%d_%H_%M_%S')
 
     log.info(file_name + date + '.csv \n')
     log.info('radius = {:d},split case = {:d}\n'.format(radius, split_case))
-    print("Log is start!")
+
 
     if gParameters['data_type'] == 'original':
 
@@ -404,11 +407,13 @@ def run(gParameters):
 
     elif gParameters['data_type'] == 'ccle_candle':
         st_pp = time.time() 
-        # print("Creating data for candle")
-        untils.get_data(data_url, os.path.join(data_path, 'swn_original'), True, False)
+        print("Creating data for candle" )
+        untils.get_data(data_url, os.path.join(data_path, 'swn_original'), download_data, False)
     
-        if not os.path.exists(data_path+'/csa_data'):
+        if not os.path.exists(data_path+'/csa_data') and download_data:
             download_csa_data(gParameters)
+        else:
+            print("not downloading ccle data")
         
         # for p in ['CCLE/CCLE_Data', 'CCLE/CCLE_Data/drug_similarity', 'CCLE/CCLE_Data/graph_data', f'CCLE/CCLE_Data/graph_data/radius_{radius}']:
         # for p in ['CCLE/CCLE_Data', 'CCLE/drug_similarity', 'CCLE/graph_data', 'swn_original/CCLE/CCLE_Data']:
