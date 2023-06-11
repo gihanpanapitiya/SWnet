@@ -81,7 +81,7 @@ def setup_seed(seed):
     np.random.seed(seed)
     random.seed(seed)
     torch.backends.cudnn.deterministic = True
-# 设置随机数种子
+
 setup_seed(0)
 
 
@@ -356,15 +356,15 @@ def download_csa_data(opt):
     
 
     for file in ['CCLE_all.txt', 'CCLE_split_0_test.txt', 'CCLE_split_0_train.txt', 'CCLE_split_0_val.txt']:
-        urllib.request.urlretrieve(f'https://ftp.mcs.anl.gov/pub/candle/public/improve/benchmarks/single_drug_drp/csa_data/splits/{file}',
+        urllib.request.urlretrieve(f'https://ftp.mcs.anl.gov/pub/candle/public/improve/benchmarks/single_drug_drp/benchmark-data-imp-2023/csa_data/splits/{file}',
         splits_dir+f'/{file}')
 
     for file in ['cancer_mutation_count.txt', 'drug_SMILES.txt','drug_ecfp4_512bit.txt', 'cancer_gene_expression.txt']:
-        urllib.request.urlretrieve(f'https://ftp.mcs.anl.gov/pub/candle/public/improve/benchmarks/single_drug_drp/csa_data/x_data/{file}',
+        urllib.request.urlretrieve(f'https://ftp.mcs.anl.gov/pub/candle/public/improve/benchmarks/single_drug_drp/benchmark-data-imp-2023/csa_data/x_data/{file}',
         x_data_dir+f'/{file}')
 
     for file in ['response.txt']:
-        urllib.request.urlretrieve(f'https://ftp.mcs.anl.gov/pub/candle/public/improve/benchmarks/single_drug_drp/csa_data/y_data/{file}',
+        urllib.request.urlretrieve(f'https://ftp.mcs.anl.gov/pub/candle/public/improve/benchmarks/single_drug_drp/benchmark-data-imp-2023/csa_data/y_data/{file}',
         y_data_dir+f'/{file}')
 
 
@@ -409,9 +409,10 @@ def run(gParameters):
         st_pp = time.time() 
         print("Creating data for candle" )
         untils.get_data(data_url, os.path.join(data_path, 'swn_original'), download_data, False)
-    
-        if not os.path.exists(data_path+'/csa_data') and download_data:
-            download_csa_data(gParameters)
+
+        if download_data:
+            if not os.path.exists(data_path+'/csa_data'):
+                download_csa_data(gParameters)
         else:
             print("not downloading ccle data")
         
