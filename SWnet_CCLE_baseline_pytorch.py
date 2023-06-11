@@ -485,6 +485,7 @@ def run(gParameters):
         train_id, test_id = untils.split_data(data,split_case=split_case, ratio=0.9,cell_names=cell_names) # gihan
     elif gParameters['data_type'] == 'ccle_candle':
         if gParameters['data_split_seed'] > -1:
+            print('random splitting...')
             all_id = pd.read_csv(data_path+'/CCLE/CCLE_Data/CCLE_cell_drug_labels.csv')
             all_id = all_id.sort_values(by='cell_line_id')
             all_id.reset_index(drop=True, inplace=True)
