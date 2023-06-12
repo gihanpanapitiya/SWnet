@@ -15,4 +15,4 @@ output_dir = 'Output'
 download_data = True
 data_type = 'ccle_candle'
 data_split_seed=42
-metric='auc1'
+metric='ic50'
