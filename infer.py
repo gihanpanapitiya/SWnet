@@ -26,9 +26,9 @@ from preprocess_drug_similarity import prepare_similarity_data
 import urllib
 from preprocess import candle_preprocess
 from sklearn.model_selection import train_test_split
-# from data_utils import download_candle_data
-# torch.manual_seed(0)
+from data_utils import Downloader, candle_data_dict
 
+# torch.manual_seed(0)
 file_path = os.path.dirname(os.path.realpath(__file__))
 additional_definitions = [
     {'name': 'batch_size',
@@ -71,15 +71,12 @@ additional_definitions = [
     {'name': 'download_data',
      'type': bool
      },
-    {'name': 'cross_study',
-     'type': bool
-     },
-    {'name': 'process_data',
-     'type': bool
-     },
     {'name': 'data_source',
      'type': str
-     }  
+     },
+     {'name': 'process_data',
+     'type': bool
+     }
 ]
 
 required = None
@@ -248,101 +245,9 @@ class Model(nn.Module):
         return y_pred
 
 
-def train_model(model, train_loader, test_loader, dataset_sizes, criterion, optimizer, scheduler, output_dir, file_name, num_epochs=500):
-    since = time.time()
-
-    # best_model_wts = copy.deepcopy(model.state_dict())
-    best_loss = 10.0
-    best_epoch = -1
-
-    pth_name = 'best_model.pth' # gihan
-    pth_name = os.path.join(output_dir, pth_name)
-
-    if os.path.exists(pth_name):
-        print('loading existing weights')
-        model.load_state_dict(torch.load(pth_name))
-
-
-    for epoch in range(num_epochs):
-        print('Epoch {}/{}'.format(epoch, num_epochs - 1))
-        print('-' * 10)
-        log.info('Epoch {}/{}\n'.format(epoch, num_epochs - 1))
-
-        # Each epoch has a training and validation phase
-        train_loss = 0.0
-        model.train()
-        for step, (rma, var, drug_id, y) in tqdm(enumerate(train_loader)):
-            rma = rma.cuda(device=device_ids[0])
-            var = var.cuda(device=device_ids[0])
-            y = y.cuda(device=device_ids[0])
-            y = y.view(-1, 1)
-            # print('y',y)
-
-            y_pred = model(rma, var, drug_id)
-            # print('y_pred',y_pred)
-            loss = criterion(y_pred, y)
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-            train_loss += loss.item() * rma.size(0)
-        scheduler.step()
-
-        test_loss = 0.0
-        model.eval()
-        for step, (rma, var, drug_id, y) in tqdm(enumerate(test_loader)):
-            rma = rma.cuda(device=device_ids[0])
-            var = var.cuda(device=device_ids[0])
-            y = y.cuda(device=device_ids[0])
-            y = y.view(-1, 1)
-
-            y_pred = model(rma, var, drug_id)
-            loss = criterion(y_pred, y)
-            test_loss += loss.item() * rma.size(0)
-
-        epoch_train_loss = train_loss / dataset_sizes['train']
-        epoch_test_loss = test_loss / dataset_sizes['test']
-
-        print('Train Loss: {:.4f} Test Loss: {:.4f}'.format(epoch_train_loss, epoch_test_loss))
-        log.info('Train Loss: {:.4f} Test Loss: {:.4f}\n'.format(epoch_train_loss, epoch_test_loss))
-   
-        # deep copy the model
-        if epoch_test_loss < best_loss: #and epoch>=3:
-            best_loss = epoch_test_loss
-            # best_model_wts = copy.deepcopy(model.state_dict())
-            torch.save(model.state_dict(), pth_name)
-            print("Saving the best model done!")
-
-            best_epoch=epoch
-        
-    print("best epoch: ", best_epoch)
-    time_elapsed = time.time() - since
-    print("train time: ", time_elapsed)
-    print('Training complete in {:.0f}m {:.0f}s'.format(
-        time_elapsed // 60, time_elapsed % 60))
-    log.info('Training complete in {:.0f}m {:.0f}s'.format(
-        time_elapsed // 60, time_elapsed % 60))
-    print('Best test loss: {:4f}'.format(best_loss))
-    log.info('Best test loss: {:4f}\n'.format(best_loss))
-
-    # load best model weights
-    model.load_state_dict(torch.load(pth_name))
-
-    
-
-    # pth_name = '../log/pth/' + str(round(best_loss,4)) + '_' + file_name + '_r' + str(radius) +'_s' + str(split_case) + '.pth'
-    # torch.save(model.state_dict(), pth_name)
-    # pth_name = 'best_model.pth' # gihan
-    # pth_name = os.path.join(output_dir, pth_name)
-    # torch.save(model.state_dict(), pth_name)
-    # print("Saving the best model done!")
-
-    return model
-
-
-def add_natoms(df):
-    natoms = [Chem.MolFromSmiles(i).GetNumAtoms() for i in df.smiles]
-    df['natoms'] = natoms
+# def add_natoms(df):
+#     natoms = [Chem.MolFromSmiles(i).GetNumAtoms() for i in df.smiles]
+#     df['natoms'] = natoms
 
 def eval_model(model, test_loader, ccle_smiles):
     from sklearn.metrics import r2_score, mean_squared_error
@@ -350,16 +255,17 @@ def eval_model(model, test_loader, ccle_smiles):
     y_true = []
     smiles = []
     model.eval()
-    for step, (rma, var, drug_id,y) in tqdm(enumerate(test_loader)):
-        rma = rma.cuda(device=device_ids[0])
-        var = var.cuda(device=device_ids[0])
-        y = y.cuda(device=device_ids[0])
-        y = y.view(-1, 1)
-        # print('y',y)
-        y_true += y.cpu().detach().numpy().tolist()
-        y_pred_step = model(rma, var, drug_id)
-        y_pred += y_pred_step.cpu().detach().numpy().tolist()
-        smiles.extend( [ccle_smiles.loc[di, 'smiles'] for di in drug_id] )
+    with torch.no_grad():
+        for step, (rma, var, drug_id,y) in tqdm(enumerate(test_loader)):
+            rma = rma.cuda(device=device_ids[0])
+            var = var.cuda(device=device_ids[0])
+            y = y.cuda(device=device_ids[0])
+            y = y.view(-1, 1)
+            # print('y',y)
+            y_true += y.cpu().detach().numpy().tolist()
+            y_pred_step = model(rma, var, drug_id)
+            y_pred += y_pred_step.cpu().detach().numpy().tolist()
+            smiles.extend( [ccle_smiles.loc[di, 'smiles'] for di in drug_id] )
 
     df_res = pd.DataFrame(zip(np.array(y_true).ravel(), np.array(y_pred).ravel(), smiles ), columns=['true', 'pred', 'smiles'])
     return mean_squared_error(y_true, y_pred),r2_score(y_true, y_pred), df_res
@@ -391,6 +297,80 @@ def eval_model(model, test_loader, ccle_smiles):
 #         urllib.request.urlretrieve(f'https://ftp.mcs.anl.gov/pub/candle/public/improve/benchmarks/single_drug_drp/benchmark-data-imp-2023/csa_data/y_data/{file}',
 #         y_data_dir+f'/{file}')
 
+def _download_data_and_process(data_url, data_path, data_type, data_split_id, metric, gParameters, download_data):
+    
+    print('downloading and processing data for ', data_type, 'split ', data_split_id, 'metric ', metric)
+
+
+    st_pp = time.time() 
+    if not os.path.exists(os.path.join(data_path, 'swn_original')):
+        untils.get_data(data_url, os.path.join(data_path, 'swn_original'), download_data, False)
+
+    data_type_path = os.path.join(data_path, data_type)
+    if not os.path.exists(data_type_path):
+        if download_data:
+            print("Creating data for candle" )
+            download_candle_data(data_type=data_type, split_id=data_split_id, data_dest=data_path)    
+
+        for p in [f'{data_type}/{data_type}_Data', f'{data_type}/drug_similarity', f'{data_type}/graph_data']:
+            path = os.path.join(data_path, p)
+            if not os.path.exists(path):
+                os.makedirs(path)
+
+
+    ext_gene_file = os.path.join(data_path, 'swn_original','CCLE/CCLE_Data/CCLE_DepMap.csv')
+
+    candle_preprocess(data_type=data_type, 
+                    metric=metric, 
+                    data_path=data_path,
+                    split_id=data_split_id,
+                    ext_gene_file=ext_gene_file)
+
+    prepare_graph_data(data_path, gParameters)
+    # os.system(f"python preprocess_drug_graph.py --radius {radius} --data_path {data_path}")
+    prepare_similarity_data(data_path, data_type)
+    pp_time = time.time() - st_pp
+    print('data preprocessing time: ', pp_time)
+
+
+def _data_process(data_url, data_path, data_type, data_split_id, metric, gParameters, download_data):
+    
+    print('downloading and processing data for ', data_type, 'split ', data_split_id, 'metric ', metric)
+
+
+    st_pp = time.time() 
+    if not os.path.exists(os.path.join(data_path, 'swn_original')):
+        untils.get_data(data_url, os.path.join(data_path, 'swn_original'), download_data, False)
+
+    data_type_path = os.path.join(data_path, data_type)
+    # if not os.path.exists(data_type_path):
+        # if download_data:
+        #     print("Creating data for candle" )
+        #     download_candle_data(data_type=data_type, split_id=data_split_id, data_dest=data_path)    
+
+    for p in [f'{data_type}/{data_type}_Data', f'{data_type}/drug_similarity', f'{data_type}/graph_data']:
+        path = os.path.join(data_path, p)
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+
+    ext_gene_file = os.path.join(data_path, 'swn_original','CCLE/CCLE_Data/CCLE_DepMap.csv')
+
+    candle_preprocess(data_type=data_type, 
+                    metric=metric, 
+                    data_path=data_path,
+                    split_id=data_split_id,
+                    ext_gene_file=ext_gene_file,
+                    params=gParameters)
+
+    radius = gParameters['radius']
+    if not os.path.exists(os.path.join(data_path, data_type, f'graph_data/radius{radius}/compounds')):
+        prepare_graph_data(data_path, gParameters)
+    # os.system(f"python preprocess_drug_graph.py --radius {radius} --data_path {data_path}")
+    if not os.path.exists(os.path.join(data_path, data_type, f'drug_similarity/{data_type}_drug_similarity.csv')):
+        prepare_similarity_data(data_path, data_type)
+    pp_time = time.time() - st_pp
+    print('data preprocessing time: ', pp_time)
 
 def run(gParameters):
 
@@ -413,8 +393,11 @@ def run(gParameters):
     data_path=os.path.join(CANDLE_DATA_DIR, gParameters['model_name'], 'Data')
     data_source = gParameters['data_source']
     data_split_id = gParameters['data_split_id']
-    cross_study = gParameters['cross_study']
+    data_version = gParameters['data_version']
     process_data = gParameters['process_data']
+    cross_study = gParameters['cross_study']
+    # infer_data_source = gParameters['infer_data_source']
+
     print("BATCH_SIZE: ", BATCH_SIZE)
 
     """log"""
@@ -427,62 +410,34 @@ def run(gParameters):
 
 
     if data_source == 'original':
-        if process_data:
-            untils.get_data(data_url, data_path, download_data)
+
+        untils.get_data(data_url, data_path, download_data)
         n_genes=1478
 
     # elif gParameters['data_type'] == 'ccle_candle':
+
     elif 'candle' in data_source:
-        if data_source == 'ccle_candle':
-            data_type = "CCLE"
-        elif data_source == 'ctrpv2_candle':
-            data_type = "CTRPv2"
-        elif data_source == 'gdscv1_candle':
-            data_type = "GDSCv1"
-        elif data_source == 'gdscv2_candle':
-            data_type = "GDSCv2"
-        elif data_source == 'gcsi_candle':
-            data_type = "gCSI"
 
+        data_type = candle_data_dict[data_source]
         gParameters['data_type'] = data_type
+        print("DATA TYPE: ", data_type)
 
+        if download_data:
+            downloader = Downloader(data_version)
+            downloader.download_candle_split_data(data_type=data_type, split_id=data_split_id, data_dest=data_path)
+        # _download_data_and_process(data_url=data_url, data_path=data_path, 
+        #             data_type=data_type, data_split_id=data_split_id, 
+        #             metric=metric, gParameters=gParameters, download_data=download_data)
         if process_data:
-            st_pp = time.time() 
-            print("Creating data for candle" )
-            untils.get_data(data_url, os.path.join(data_path, 'swn_original'), download_data, False)
+            # data_processor = DataProcessor(data_version)
+            _data_process(data_url, data_path, data_type, data_split_id, metric, gParameters, download_data)
 
-        
-        # if download_data:
-        #     download_candle_data(data_type=data_type, split_id=data_split_id, data_dest=data_path)    
-
-            for p in [f'{data_type}/{data_type}_Data', f'{data_type}/drug_similarity', f'{data_type}/graph_data']:
-                path = os.path.join(data_path, p)
-                if not os.path.exists(path):
-                    os.makedirs(path)
-
-
-            ext_gene_file = os.path.join(data_path, 'swn_original','CCLE/CCLE_Data/CCLE_DepMap.csv')
-  
-            candle_preprocess(data_type=data_type, 
-                         metric=metric, 
-                         data_path=data_path,
-                         split_id=data_split_id,
-                         ext_gene_file=ext_gene_file,
-                         params=gParameters)
-
-
-            if not os.path.exists(os.path.join(data_path, data_type, f'graph_data/radius{radius}/compounds')):
-                print("creating graph data")
-                prepare_graph_data(data_path, gParameters)
-            # os.system(f"python preprocess_drug_graph.py --radius {radius} --data_path {data_path}")
-            if not os.path.exists(os.path.join(data_path, data_type, f'drug_similarity/{data_type}_drug_similarity.csv')):
-                print("creating similarity data")
-                prepare_similarity_data(data_path, data_type, gParameters)
-            pp_time = time.time() - st_pp
+    
 
         df_mut = pd.read_csv(os.path.join(data_path,f'{data_type}/{data_type}_Data', f'{data_type}_RNAseq.csv'), index_col=0)
         n_genes = len(df_mut.columns)
-
+    
+    print("data_type: ", data_type)
 
     """Load preprocessed drug graph data."""
     dir_input = (data_path+f'/{data_type}/graph_data/' + 'radius' + str(radius) + '/')
@@ -495,17 +450,17 @@ def run(gParameters):
     graph_dataset = list(zip(compounds, adjacencies))
 
     """Load CCLE data."""
-    rma, var, smiles, all_smiles = untils.load_CCLE_data(data_path, data_type)
+    rma, var, smiles, all_smiles = untils.load_CCLE_data(data_path, data_type, cross_study)
 
     smiles_vals = smiles["smiles"].values
     smiles_index = smiles.index
     cell_names = rma.index.values
     gene = rma.columns.values
     if cross_study:
-        drugs_num = len(all_smiles) # changing this for comatibility with all the data sources, have to find a better fix
+        drugs_num = len(all_smiles)
         GDSC_drug_dict = untils.get_drug_dict(all_smiles)
     else:
-        drugs_num = len(smiles_index) # changing this for comatibility with all the data sources, have to find a better fix
+        drugs_num = len(smiles_index)
         GDSC_drug_dict = untils.get_drug_dict(smiles)
 
     """Load CCLE drug similarity data."""
@@ -532,46 +487,32 @@ def run(gParameters):
             test_id.reset_index(drop=True, inplace=True)
             val_id.reset_index(drop=True, inplace=True)
         else:
-            print( f'using the predefined splits from {data_path}/{data_type}/{data_type}_Data' )
-
+            print('reading the saved files')
             train_id = pd.read_csv(data_path+f'/{data_type}/{data_type}_Data/train.csv')
             val_id = pd.read_csv(data_path+f'/{data_type}/{data_type}_Data/val.csv')
             test_id = pd.read_csv(data_path+f'/{data_type}/{data_type}_Data/test.csv')
             
 
-    dataset_sizes = {'train': train_id.shape[0], 'test': val_id.shape[0] }
+    dataset_sizes = {'train': len(train_id), 'test': len(test_id)}
+    testDataset = CreateDataset(rma, var, test_id)
 
-    print('-----------------------------------------------------------')
-    print("dataset size: ", train_id.shape, val_id.shape, test_id.shape)
-    print('-----------------------------------------------------------')
-    # log.flush()
 
-    trainDataset = CreateDataset(rma, var, train_id)
     valDataset = CreateDataset(rma, var, val_id)
     testDataset = CreateDataset(rma, var, test_id)
 
-    # Dataloader
-    train_loader = Data.DataLoader(dataset=trainDataset, batch_size=BATCH_SIZE * len(device_ids), shuffle=True)
     val_loader = Data.DataLoader(dataset=valDataset, batch_size=BATCH_SIZE * len(device_ids), shuffle=False , drop_last=False)
     test_loader = Data.DataLoader(dataset=testDataset, batch_size=BATCH_SIZE * len(device_ids), shuffle=False, drop_last=False)
 
     """create SWnet model"""
     model_ft = Model(dim, layer_gnn, drugs_num, n_fingerprint, similarity_softmax,
             GDSC_drug_dict, graph_dataset, n_genes)  # gihan
-    log.info(str(model_ft))
-
     """cuda"""
     model_ft = model_ft.cuda(device=device_ids[0])  #
 
-    optimizer_ft = torch.optim.Adam(model_ft.parameters(), lr=LR)
-    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=step_size, gamma=gamma)
-    criterion = nn.MSELoss()
-
-    """start training model !"""
-    print("start training model")
-
-    model_ft = train_model(model_ft, train_loader, val_loader, dataset_sizes, criterion, optimizer_ft, exp_lr_scheduler,
-                           output_dir, file_name, num_epochs=num_epochs)
+    pth_name = 'best_model.pth' # gihan
+    pth_name = os.path.join(output_dir, pth_name)
+    print(f'loading the best model: {pth_name}')
+    model_ft.load_state_dict(torch.load(pth_name))
 
     # print("loading best weights....")
     # model_ft.load_state_dict(best_weights)
@@ -587,23 +528,26 @@ def run(gParameters):
     print('test rmse:{},r2:{}'.format(test_mse**.5, test_r2))
     print('val rmse:{},r2:{}'.format(val_mse**.5, val_r2))
     # log.info('rmse:{},r2:{}'.format(mse**.5, r2))
-    print("preprocess time: ", pp_time)
+    # print("preprocess time: ", pp_time)
     print("inference time: ", test_time)
     
-    test_scores = {"val_loss": val_mse, "r2": val_r2 }
+    test_scores = {"test_rmse": test_mse**.5, "r2": test_r2 }
+
+    print('test_scores: ', test_scores)
+
     with open( os.path.join(output_dir,"test_scores.json"), "w", encoding="utf-8") as f:
         json.dump(test_scores, f, ensure_ascii=False, indent=4)
     # add_natoms(df_res)
     df_res_test.to_csv(os.path.join(output_dir,"test_predictions.csv"), index=False)
 
     """Save the gene weights """
-    fuse = pd.DataFrame(model_ft.fuse_weight.cpu().detach().numpy(),
-                        index=smiles_index, columns=gene)
+    # fuse = pd.DataFrame(model_ft.fuse_weight.cpu().detach().numpy(),
+    #                     index=smiles_index, columns=gene)
 
-    os.makedirs(os.path.join(output_dir, "log/logs/gene_weights/"), exist_ok=True)
-    fuse_name = os.path.join(output_dir, 'log/logs/gene_weights/' + str(round(test_mse, 4)) + '_' + file_name + '_r' + str(radius) + '_s' + str(split_case) + '.csv')
-    fuse.to_csv(fuse_name)
-    print("Save the gene weights done!")
+    # os.makedirs(os.path.join(output_dir, "log/logs/gene_weights/"), exist_ok=True)
+    # fuse_name = os.path.join(output_dir, 'log/logs/gene_weights/' + str(round(test_mse, 4)) + '_' + file_name + '_r' + str(radius) + '_s' + str(split_case) + '.csv')
+    # fuse.to_csv(fuse_name)
+    # print("Save the gene weights done!")
 
     return test_scores
 
@@ -633,7 +577,7 @@ if __name__ == '__main__':
 
     gParameters = initialize_parameters()
     print(gParameters)
-    handler = logging.FileHandler( os.path.join(CANDLE_DATA_DIR, gParameters['model_name'], 'Output', 'log.txt'), mode='w' )
+    handler = logging.FileHandler( os.path.join(CANDLE_DATA_DIR, gParameters['model_name'], 'Output', 'pred_log.txt'), mode='w' )
     fomatter = logging.Formatter(fmt=' %(name)s :: %(levelname)-8s :: %(message)s')
     handler.setFormatter(fomatter)
     log.addHandler(handler)

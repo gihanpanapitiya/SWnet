@@ -20,6 +20,7 @@ def prepare_graph_data(data_path, opt):
     # parser.add_argument("--data_path" ,type=str)
     # args = parser.parse_args()
     radius = opt['radius']
+    data_type = opt['data_type']
     # data_path = opt['data_path']
     print('radius = {}'.format(radius))
 
@@ -94,9 +95,16 @@ def prepare_graph_data(data_path, opt):
 
 
     """Load a dataset."""
-    filename = data_path+'/CCLE/CCLE_Data/CCLE_smiles.csv'
+    print('creating graph data')
+    if opt["cross_study"]:
+        filename = data_path+f'/{data_type}/{data_type}_Data/all_smiles.csv' # changing this for comatibility with all the data sources, have to find a better fix
+    else:
+        filename = data_path+f'/{data_type}/{data_type}_Data/{data_type}_smiles.csv' # changing this for comatibility with all the data sources, have to find a better fix
+
     data = pd.read_csv(filename, index_col=0)
     all_smiles = data["smiles"].values
+
+    print("smiles: ", len(all_smiles), all_smiles[:100])
 
     atom_dict = defaultdict(lambda: len(atom_dict))
     bond_dict = defaultdict(lambda: len(bond_dict))
@@ -104,23 +112,32 @@ def prepare_graph_data(data_path, opt):
     edge_dict = defaultdict(lambda: len(edge_dict))
 
     Smiles, compounds, adjacencies= '', [], []
+    failed_smiles=[]
+    # for smiles in all_smiles:
+    for id  in data.index:
+        smiles = data.loc[id, 'smiles']
 
-    for smiles in all_smiles:
+        # print(smiles)
 
-        print(smiles)
-        Smiles += smiles + '\n'
+        try:
+            Smiles += smiles + '\n'
 
-        mol = Chem.AddHs(Chem.MolFromSmiles(smiles))  # Consider hydrogens.
-        atoms = create_atoms(mol)
-        i_jbond_dict = create_ijbonddict(mol)
+            mol = Chem.AddHs(Chem.MolFromSmiles(smiles))  # Consider hydrogens.
+            atoms = create_atoms(mol)
+            i_jbond_dict = create_ijbonddict(mol)
 
-        fingerprints = extract_fingerprints(atoms, i_jbond_dict, radius)
-        compounds.append(fingerprints)
+            fingerprints = extract_fingerprints(atoms, i_jbond_dict, radius)
+            compounds.append(fingerprints)
 
-        adjacency = create_adjacency(mol)
-        adjacencies.append(adjacency)
+            adjacency = create_adjacency(mol)
+            adjacencies.append(adjacency)
+        except:
+            failed_smiles.append([id,smiles])
 
-    dir_input = (data_path+'/CCLE/graph_data/'+'radius' + str(radius) + '/')
+
+
+
+    dir_input = (data_path+f'/{data_type}/graph_data/'+'radius' + str(radius) + '/')
     os.makedirs(dir_input, exist_ok=True)
 
     with open(dir_input + 'Smiles.txt', 'w') as f:
@@ -136,4 +153,4 @@ def prepare_graph_data(data_path, opt):
         
     dump_dictionary(fingerprint_dict, dir_input + 'fingerprint_dict.pickle')
 
-    print('The preprocess of CCLE dataset has finished!')
+    print(f'The preprocess of {data_type} dataset has finished!')

@@ -24,15 +24,19 @@ def drug_similarity(smiles):
     return similarity_softmax
 
 
-def prepare_similarity_data(data_path):
+def prepare_similarity_data(data_path, data_type, args):
 
 # if __name__ == "__main__":
-    GDSC_smiles_path = data_path+'/CCLE'+'/CCLE_Data/CCLE_smiles.csv'
+
+    if args["cross_study"]:
+        GDSC_smiles_path = data_path+f'/{data_type}/{data_type}_Data/all_smiles.csv' # changing this for comatibility with all the data sources, have to find a better fix
+    else:
+        GDSC_smiles_path = data_path+f'/{data_type}/{data_type}_Data/{data_type}_smiles.csv' # changing this for comatibility with all the data sources, have to find a better fix
     GDSC_smiles = pd.read_csv(GDSC_smiles_path, index_col=0)
     GDSC_smiles_vals = GDSC_smiles["smiles"].values
 
     similarity_softmax = drug_similarity(GDSC_smiles_vals)
     GDSC_softmax_similarity = pd.DataFrame(similarity_softmax.numpy(), columns=None, index=None)
-    GDSC_softmax_similarity.to_csv(data_path+"/CCLE/"+"/drug_similarity/CCLE_drug_similarity.csv",header=None,index=None)
+    GDSC_softmax_similarity.to_csv(data_path+f"/{data_type}/drug_similarity/{data_type}_drug_similarity.csv",header=None,index=None)
 
-    print("CCLE drug similarity has finished!")
+    print(f"{data_type} drug similarity has finished!")

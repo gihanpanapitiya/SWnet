@@ -52,16 +52,21 @@ def load_GDSC_data(base_path):
 
     return rma, var, smiles
 
-def load_CCLE_data(base_path):
-    GDSC_rma_path = base_path+"/CCLE/CCLE_Data/CCLE_RNAseq.csv"
-    GDSC_variant_path = base_path+"/CCLE/CCLE_Data/CCLE_DepMap.csv"
-    GDSC_smiles_path = base_path+"/CCLE/CCLE_Data/CCLE_smiles.csv"
+def load_CCLE_data(base_path, data_type, cross_study=False):
+    GDSC_rma_path = base_path+f"/{data_type}/{data_type}_Data/{data_type}_RNAseq.csv"
+    GDSC_variant_path = base_path+f"/{data_type}/{data_type}_Data/{data_type}_DepMap.csv"
+    GDSC_smiles_path = base_path+f"/{data_type}/{data_type}_Data/{data_type}_smiles.csv"
+    if cross_study:
+        all_smiles_path = base_path+f"/{data_type}/{data_type}_Data/all_smiles.csv"
+        all_smiles = pd.read_csv(all_smiles_path, index_col=0)
+    else:
+        all_smiles = None
 
     rma = pd.read_csv(GDSC_rma_path, index_col=0)
     var = pd.read_csv(GDSC_variant_path, index_col=0)
     smiles = pd.read_csv(GDSC_smiles_path, index_col=0)
 
-    return rma, var, smiles
+    return rma, var, smiles, all_smiles
 
 
 def get_data(data_url, cache_subdir, download=True, svn=False):
