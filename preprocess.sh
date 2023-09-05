@@ -10,8 +10,8 @@
 # arg 3 CANDLE_CONFIG
 
 ### Path to your CANDLEized model's main Python script###
-#CANDLE_MODEL=/usr/local/SWnet/download_process.py
-CANDLE_MODEL=download_process.py
+CANDLE_MODEL=/usr/local/SWnet/download_process.py
+#CANDLE_MODEL=download_process.py
 
 if [ $# -lt 2 ] ; then
         echo "Illegal number of parameters"
