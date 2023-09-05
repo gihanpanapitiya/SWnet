@@ -587,7 +587,8 @@ def run(gParameters):
     print('test rmse:{},r2:{}'.format(test_mse**.5, test_r2))
     print('val rmse:{},r2:{}'.format(val_mse**.5, val_r2))
     # log.info('rmse:{},r2:{}'.format(mse**.5, r2))
-    print("preprocess time: ", pp_time)
+    if process_data:
+        print("preprocess time: ", pp_time)
     print("inference time: ", test_time)
     
     test_scores = {"val_loss": val_mse, "r2": val_r2 }
