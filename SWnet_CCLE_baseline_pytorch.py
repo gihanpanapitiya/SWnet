@@ -597,6 +597,8 @@ def run(gParameters):
     # add_natoms(df_res)
     df_res_test.to_csv(os.path.join(output_dir,"test_predictions.csv"), index=False)
 
+    print("\nIMPROVE_RESULT val_loss:\t{}\n".format(test_scores["val_loss"]))
+
     """Save the gene weights """
     fuse = pd.DataFrame(model_ft.fuse_weight.cpu().detach().numpy(),
                         index=smiles_index, columns=gene)
