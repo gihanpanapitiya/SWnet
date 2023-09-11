@@ -248,6 +248,52 @@ class Model(nn.Module):
         return y_pred
 
 
+
+class EarlyStopping:
+    """Early stops the training if validation loss doesn't improve after a given patience."""
+    def __init__(self, patience=7, verbose=False, delta=0, chkpoint_name = 'gnn_best.pt' ):
+        """
+        Args:
+            patience (int): How long to wait after last time validation loss improved.
+                            Default: 7
+            verbose (bool): If True, prints a message for each validation loss improvement. 
+                            Default: False
+            delta (float): Minimum change in the monitored quantity to qualify as an improvement.
+                            Default: 0
+        """
+        self.patience = patience
+        self.verbose = verbose
+        self.counter = 0
+        self.best_score = None
+        self.early_stop = False
+        self.val_loss_min = np.Inf
+        self.delta = delta
+        self.chkpoint_name = chkpoint_name
+
+    def __call__(self, val_loss, model):
+
+        score = -val_loss
+
+        if self.best_score is None:
+            self.best_score = score
+            self.save_checkpoint(val_loss, model)
+        elif score < self.best_score + self.delta:
+            self.counter += 1
+            print(f'EarlyStopping counter: {self.counter} out of {self.patience}')
+            if self.counter >= self.patience:
+                self.early_stop = True
+        else:
+            self.best_score = score
+            self.save_checkpoint(val_loss, model)
+            self.counter = 0
+
+    def save_checkpoint(self, val_loss, model):
+        '''Saves model when validation loss decrease.'''
+        if self.verbose:
+            print(f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ...')
+        torch.save(model.state_dict(), self.chkpoint_name)
+        self.val_loss_min = val_loss
+
 def train_model(model, train_loader, test_loader, dataset_sizes, criterion, optimizer, scheduler, output_dir, file_name, num_epochs=500):
     since = time.time()
 
@@ -262,6 +308,7 @@ def train_model(model, train_loader, test_loader, dataset_sizes, criterion, opti
         print('loading existing weights')
         model.load_state_dict(torch.load(pth_name))
 
+    early_stopping = EarlyStopping(patience=10, chkpoint_name = 'model_best.pt')
 
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
@@ -303,6 +350,8 @@ def train_model(model, train_loader, test_loader, dataset_sizes, criterion, opti
         epoch_train_loss = train_loss / dataset_sizes['train']
         epoch_test_loss = test_loss / dataset_sizes['test']
 
+
+
         print('Train Loss: {:.4f} Test Loss: {:.4f}'.format(epoch_train_loss, epoch_test_loss))
         log.info('Train Loss: {:.4f} Test Loss: {:.4f}\n'.format(epoch_train_loss, epoch_test_loss))
    
@@ -314,6 +363,12 @@ def train_model(model, train_loader, test_loader, dataset_sizes, criterion, opti
             print("Saving the best model done!")
 
             best_epoch=epoch
+
+        early_stopping(epoch_test_loss, model)
+        if early_stopping.early_stop:
+            print("Early stopping")
+            break
+
         
     print("best epoch: ", best_epoch)
     time_elapsed = time.time() - since
