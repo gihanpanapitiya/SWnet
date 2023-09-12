@@ -14,7 +14,7 @@ def get_drug_dict(smiles):
         drug_dict[drug_index[i]] = i
     return drug_dict
 
-def split_data(data,split_case,ratio,cell_names, random_state):
+def split_data(data,split_case,ratio,cell_names, random_state=42):
     data = data[data["labels"].notnull()]
     data = data[~data['drug_id'].isin([185, 1021])]  # except drug id
     # Split data sets randomly
@@ -69,7 +69,7 @@ def load_CCLE_data(base_path, data_type, cross_study=False):
     return rma, var, smiles, all_smiles
 
 
-def get_data(data_url, cache_subdir, download=True, svn=False):
+def get_data(data_url, cache_subdir, radius=3, download=True, svn=False):
     # cache_subdir = os.path.join(CANDLE_DATA_DIR, 'SWnet', 'Data')
     
     if download and svn:
@@ -83,3 +83,27 @@ def get_data(data_url, cache_subdir, download=True, svn=False):
         os.makedirs(ccle_data, exist_ok=True)
         urllib.request.urlretrieve('https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/CCLE/CCLE_Data/CCLE_DepMap.csv',
          f'{ccle_data}/CCLE_DepMap.csv')
+        urllib.request.urlretrieve('https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/CCLE/CCLE_Data/CCLE_RNAseq.csv',
+         f'{ccle_data}/CCLE_RNAseq.csv')
+        urllib.request.urlretrieve('https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/CCLE/CCLE_Data/CCLE_cell_drug_labels.csv',
+         f'{ccle_data}/CCLE_cell_drug_labels.csv')
+        urllib.request.urlretrieve('https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/CCLE/CCLE_Data/CCLE_smiles.csv',
+         f'{ccle_data}/CCLE_smiles.csv')
+
+        ccle_data = os.path.join(cache_subdir,'CCLE/drug_similarity/')
+        os.makedirs(ccle_data, exist_ok=True)
+        urllib.request.urlretrieve('https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/CCLE/drug_similarity/CCLE_drug_similarity.csv',
+         f'{ccle_data}/CCLE_drug_similarity.csv')
+         
+        ccle_data = os.path.join(cache_subdir,f'CCLE/graph_data/radius{radius}')
+        os.makedirs(ccle_data, exist_ok=True)
+        urllib.request.urlretrieve(f'https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/CCLE/graph_data/radius{radius}/Smiles.txt',
+         f'{ccle_data}/Smiles.txt')
+        urllib.request.urlretrieve(f'https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/CCLE/graph_data/radius{radius}/adjacencies.npy',
+         f'{ccle_data}/adjacencies.npy')
+        urllib.request.urlretrieve(f'https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/CCLE/graph_data/radius{radius}/compounds.npy',
+         f'{ccle_data}/compounds.npy')
+        urllib.request.urlretrieve(f'https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/CCLE/graph_data/radius{radius}/fingerprint_dict.pickle',
+         f'{ccle_data}/fingerprint_dict.pickle')
+
+         

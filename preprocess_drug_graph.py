@@ -95,12 +95,15 @@ def prepare_graph_data(data_path, opt):
 
 
     """Load a dataset."""
-    print('creating graph data')
+    print('creating graph data', data_type)
     if opt["cross_study"]:
         filename = data_path+f'/{data_type}/{data_type}_Data/all_smiles.csv' # changing this for comatibility with all the data sources, have to find a better fix
     else:
         filename = data_path+f'/{data_type}/{data_type}_Data/{data_type}_smiles.csv' # changing this for comatibility with all the data sources, have to find a better fix
 
+    print('----------------------')
+    print(filename)
+    print('----------------------')
     data = pd.read_csv(filename, index_col=0)
     all_smiles = data["smiles"].values
 

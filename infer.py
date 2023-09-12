@@ -136,7 +136,7 @@ class CreateDataset(Dataset):
 
 class Model(nn.Module):
     def __init__(self,dim,layer_gnn,drugs_num, n_fingerprint, similarity_softmax,
-            GDSC_drug_dict, graph_dataset, n_genes):
+            GDSC_drug_dict, graph_dataset, n_genes, dim_lin=70):
         super(Model, self).__init__()
         self.n_genes = n_genes
         self.fuse_weight = torch.nn.Parameter(torch.FloatTensor(drugs_num, n_genes), requires_grad=True).to(device)
@@ -164,7 +164,7 @@ class Model(nn.Module):
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=5, stride=5),
             # nn.Linear(71, 32), # for original
-            nn.Linear(70, 32), # for candle ccle
+            nn.Linear(dim_lin, 32), # for candle ccle
             nn.ReLU(),
             nn.Dropout(p=0.1)
         )
@@ -409,15 +409,18 @@ def run(gParameters):
     log.info('radius = {:d},split case = {:d}\n'.format(radius, split_case))
 
 
-    if data_source == 'original':
-
-        untils.get_data(data_url, data_path, download_data)
+    if 'original' in data_source:
+        
+        # data should have already been downloaded
+        # untils.get_data(data_url, data_path, download_data)
         n_genes=1478
+        dim_lin=71
 
     # elif gParameters['data_type'] == 'ccle_candle':
 
     elif 'candle' in data_source:
 
+        dim_lin=70
         data_type = candle_data_dict[data_source]
         gParameters['data_type'] = data_type
         print("DATA TYPE: ", data_type)
@@ -505,7 +508,7 @@ def run(gParameters):
 
     """create SWnet model"""
     model_ft = Model(dim, layer_gnn, drugs_num, n_fingerprint, similarity_softmax,
-            GDSC_drug_dict, graph_dataset, n_genes)  # gihan
+            GDSC_drug_dict, graph_dataset, n_genes, dim_lin=dim_lin)  # gihan
     """cuda"""
     model_ft = model_ft.cuda(device=device_ids[0])  #
 

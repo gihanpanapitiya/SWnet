@@ -1,5 +1,5 @@
 import pandas as pd
-import improve_utils
+# import improve_utils
 import data_utils
 import os
 import urllib
@@ -22,6 +22,7 @@ def get_data(data_url, cache_subdir, download=True, svn=False):
         os.makedirs(ccle_data, exist_ok=True)
         urllib.request.urlretrieve('https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/CCLE/CCLE_Data/CCLE_DepMap.csv',
          f'{ccle_data}/CCLE_DepMap.csv')
+
 
 
 # def add_smiles(data_dir, df, metric):

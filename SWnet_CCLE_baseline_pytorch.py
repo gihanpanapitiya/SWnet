@@ -139,8 +139,9 @@ class CreateDataset(Dataset):
 
 class Model(nn.Module):
     def __init__(self,dim,layer_gnn,drugs_num, n_fingerprint, similarity_softmax,
-            GDSC_drug_dict, graph_dataset, n_genes):
+            GDSC_drug_dict, graph_dataset, n_genes, dim_lin=70):
         super(Model, self).__init__()
+        # dim_lin=70 # for candle data, 71 for original data 
         self.n_genes = n_genes
         self.fuse_weight = torch.nn.Parameter(torch.FloatTensor(drugs_num, n_genes), requires_grad=True).to(device)
         self.fuse_weight.data.normal_(0.5, 0.25)
@@ -167,7 +168,7 @@ class Model(nn.Module):
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=5, stride=5),
             # nn.Linear(71, 32), # for original
-            nn.Linear(70, 32), # for candle ccle
+            nn.Linear(dim_lin, 32), # for candle ccle
             nn.ReLU(),
             nn.Dropout(p=0.1)
         )
@@ -481,13 +482,27 @@ def run(gParameters):
     log.info('radius = {:d},split case = {:d}\n'.format(radius, split_case))
 
 
-    if data_source == 'original':
+    if 'original' in data_source:
+        # specify data_source='original_ccle', process_data=True, download_data=True
+        # in the params file to run for original data
+        st_pp=time.time()
+        print('running with the original data')
         if process_data:
-            untils.get_data(data_url, data_path, download_data)
+            untils.get_data(data_url=data_url, cache_subdir=data_path, radius=radius, download=download_data)
         n_genes=1478
+        dim_lin=71
+        if data_source == 'ccle_original':
+            data_type='CCLE'
+            gParameters['data_type'] = data_type
+        if process_data:
+            prepare_graph_data(data_path, gParameters)
+            prepare_similarity_data(data_path, data_type, gParameters)
+        pp_time = time.time() - st_pp
 
     # elif gParameters['data_type'] == 'ccle_candle':
     elif 'candle' in data_source:
+        dim_lin=70
+        print('running with candle data')
         if data_source == 'ccle_candle':
             data_type = "CCLE"
         elif data_source == 'ctrpv2_candle':
@@ -573,8 +588,8 @@ def run(gParameters):
     data = pd.read_csv(data_path+f"/{data_type}/{data_type}_Data/{data_type}_cell_drug_labels.csv", index_col=0)
     ccle_smiles = pd.read_csv(data_path+f"/{data_type}/{data_type}_Data/{data_type}_smiles.csv", index_col=0)
 
-    if data_source == 'original':
-        train_id, test_id = untils.split_data(data,split_case=split_case, ratio=0.9,cell_names=cell_names) # gihan
+    if 'original' in data_source:
+        train_id, val_id, test_id = untils.split_data(data,split_case=split_case, ratio=0.9,cell_names=cell_names) # gihan
     elif 'candle' in data_source:
         if gParameters['data_split_seed'] > -1:
             print('random splitting...')
@@ -612,7 +627,7 @@ def run(gParameters):
 
     """create SWnet model"""
     model_ft = Model(dim, layer_gnn, drugs_num, n_fingerprint, similarity_softmax,
-            GDSC_drug_dict, graph_dataset, n_genes)  # gihan
+            GDSC_drug_dict, graph_dataset, n_genes, dim_lin=dim_lin)  # gihan
     log.info(str(model_ft))
 
     """cuda"""

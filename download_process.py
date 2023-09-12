@@ -168,10 +168,10 @@ def run(gParameters):
 
 
 
-    if data_source == 'original':
-
-        untils.get_data(data_url, data_path, download_data)
+    if 'original' in data_source:
+        untils.get_data(data_url=data_url, cache_subdir=data_path, radius=radius, download=download_data)
         n_genes=1478
+
 
     # elif gParameters['data_type'] == 'ccle_candle':
     elif 'candle' in data_source:
