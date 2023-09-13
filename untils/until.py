@@ -34,6 +34,9 @@ def split_data(data,split_case,ratio,cell_names, random_state=42):
         train_id = data
         _ , test_id = train_test_split(data, test_size=1 - ratio, random_state=0)
 
+    elif split_case == 3:
+        train_id, test_id = train_test_split(data, test_size=1 - ratio, random_state=0)
+        val_id = test_id
     # train_id, test_id = train_test_split(data, test_size=1 - ratio, random_state=0)
     # train_id, test_id = train_id[0:100], test_id[0:100]
     return train_id, val_id, test_id

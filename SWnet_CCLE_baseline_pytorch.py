@@ -309,7 +309,7 @@ def train_model(model, train_loader, test_loader, dataset_sizes, criterion, opti
         print('loading existing weights')
         model.load_state_dict(torch.load(pth_name))
 
-    early_stopping = EarlyStopping(patience=10, chkpoint_name = 'model_best.pt')
+    early_stopping = EarlyStopping(patience=30, chkpoint_name = 'model_best.pt')
 
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
