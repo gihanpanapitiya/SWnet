@@ -171,6 +171,11 @@ def run(gParameters):
     if 'original' in data_source:
         untils.get_data(data_url=data_url, cache_subdir=data_path, radius=radius, download=download_data)
         n_genes=1478
+        if data_source == 'ccle_original':
+            data_type='CCLE'
+            gParameters['data_type'] = data_type
+        prepare_graph_data(data_path, gParameters)
+        prepare_similarity_data(data_path, data_type, gParameters)
 
 
     # elif gParameters['data_type'] == 'ccle_candle':

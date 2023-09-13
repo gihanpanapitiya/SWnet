@@ -415,6 +415,8 @@ def run(gParameters):
         # untils.get_data(data_url, data_path, download_data)
         n_genes=1478
         dim_lin=71
+        if data_source == 'ccle_original':
+            data_type='CCLE'
 
     # elif gParameters['data_type'] == 'ccle_candle':
 
@@ -476,8 +478,8 @@ def run(gParameters):
     data = pd.read_csv(data_path+f"/{data_type}/{data_type}_Data/{data_type}_cell_drug_labels.csv", index_col=0)
     ccle_smiles = pd.read_csv(data_path+f"/{data_type}/{data_type}_Data/{data_type}_smiles.csv", index_col=0)
 
-    if data_source == 'original':
-        train_id, test_id = untils.split_data(data,split_case=split_case, ratio=0.9,cell_names=cell_names) # gihan
+    if 'original' in data_source:
+        train_id, val_id, test_id = untils.split_data(data,split_case=split_case, ratio=0.9,cell_names=cell_names) # gihan
     elif 'candle' in data_source:
         if gParameters['data_split_seed'] > -1:
             print('random splitting...')
