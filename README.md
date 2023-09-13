@@ -21,9 +21,9 @@ There are three training tasks: 1. Self-attention model using GDSC data, 2. Self
 
 ```
 - singularity exec --nv SWnet.sif train.sh $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR
-#- singularity exec --nv SWnet.sif train_self_attn_gdsc.sh $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR 
-#- singularity exec --nv SWnet.sif train_self_attn_ccle.sh $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR 
-#- singularity exec --nv SWnet.sif train_multi_task.sh $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR 
+[//]: #- singularity exec --nv SWnet.sif train_self_attn_gdsc.sh $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR 
+[//]: #- singularity exec --nv SWnet.sif train_self_attn_ccle.sh $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR 
+[//]: #- singularity exec --nv SWnet.sif train_multi_task.sh $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR 
 ```
 The default input parameters of the models are given in the swnet_gdsc_model.txt, swnet_ccle_model.txt and swnet_mt_model.txt respectively.
 
