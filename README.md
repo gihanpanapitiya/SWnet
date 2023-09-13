@@ -22,17 +22,8 @@ To train the model using CCLE data, execute the following command. This is will 
 ```
 - singularity exec --nv SWnet.sif train.sh $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR
 ```
-The default input parameters of the models are given in the swnet_gdsc_model.txt, swnet_ccle_model.txt and swnet_mt_model.txt respectively.
 
-
-These training scipts also runs the evaluation for test sets. Additionally, the evaluation can be run seperately for self-attention models using, 
-
-```
-- singularity exec --nv SWnet.sif eval_self_attn_gdsc.sh $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR 
-- singularity exec --nv SWnet.sif eval_self_attn_ccle.sh $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR 
-```
-
-The outputs and the logs get written to the output_dir specified in the swnet_gdsc_model.txt, swnet_ccle_model.txt and swnet_mt_model.txt.
+The outputs and the logs get written to the output_dir specified in the swnet_ccle_model.txt.
 
 
 
