@@ -95,8 +95,12 @@ def setup_seed(seed):
 setup_seed(0)
 
 
-device_ids = [ int(os.environ["CUDA_VISIBLE_DEVICES"]) ]
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device_ids =  [int(os.environ["CUDA_VISIBLE_DEVICES"])] 
+if len(device_ids) >1:
+    device = torch.device(f"cuda:{device_ids[0]}" if torch.cuda.is_available() else "cpu")
+else:
+    device = torch.device(f"cuda" if torch.cuda.is_available() else "cpu")
+
 CANDLE_DATA_DIR=os.getenv("CANDLE_DATA_DIR")
 
 log = logging.getLogger(__name__)
@@ -320,9 +324,10 @@ def train_model(model, train_loader, test_loader, dataset_sizes, criterion, opti
         train_loss = 0.0
         model.train()
         for step, (rma, var, drug_id, y) in tqdm(enumerate(train_loader)):
-            rma = rma.cuda(device=device_ids[0])
-            var = var.cuda(device=device_ids[0])
-            y = y.cuda(device=device_ids[0])
+            #rma = rma.cuda(device=device_ids[0])
+            rma = rma.to(device)
+            var = var.to(device)
+            y = y.to(device)
             y = y.view(-1, 1)
             # print('y',y)
 
@@ -339,9 +344,9 @@ def train_model(model, train_loader, test_loader, dataset_sizes, criterion, opti
         test_loss = 0.0
         model.eval()
         for step, (rma, var, drug_id, y) in tqdm(enumerate(test_loader)):
-            rma = rma.cuda(device=device_ids[0])
-            var = var.cuda(device=device_ids[0])
-            y = y.cuda(device=device_ids[0])
+            rma = rma.to(device)
+            var = var.to(device)
+            y = y.to(device)
             y = y.view(-1, 1)
 
             y_pred = model(rma, var, drug_id)
@@ -407,9 +412,9 @@ def eval_model(model, test_loader, ccle_smiles):
     smiles = []
     model.eval()
     for step, (rma, var, drug_id,y) in tqdm(enumerate(test_loader)):
-        rma = rma.cuda(device=device_ids[0])
-        var = var.cuda(device=device_ids[0])
-        y = y.cuda(device=device_ids[0])
+        rma = rma.to(device)
+        var = var.to(device)
+        y = y.to(device)
         y = y.view(-1, 1)
         # print('y',y)
         y_true += y.cpu().detach().numpy().tolist()
@@ -487,13 +492,16 @@ def run(gParameters):
         # in the params file to run for original data
         st_pp=time.time()
         print('running with the original data')
-        if process_data:
-            untils.get_data(data_url=data_url, cache_subdir=data_path, radius=radius, download=download_data)
-        n_genes=1478
-        dim_lin=71
         if data_source == 'ccle_original':
             data_type='CCLE'
-            gParameters['data_type'] = data_type
+        elif data_source == 'gdsc_original':
+            data_type='GDSC'
+        gParameters['data_type'] = data_type
+        
+        if process_data:
+            untils.get_data(data_url=data_url, cache_subdir=data_path, radius=radius, download=download_data, data_type=data_type)
+        n_genes=1478
+        dim_lin=71
         if process_data:
             prepare_graph_data(data_path, gParameters)
             prepare_similarity_data(data_path, data_type, gParameters)
@@ -631,7 +639,7 @@ def run(gParameters):
     log.info(str(model_ft))
 
     """cuda"""
-    model_ft = model_ft.cuda(device=device_ids[0])  #
+    model_ft = model_ft.to(device)  #
 
     optimizer_ft = torch.optim.Adam(model_ft.parameters(), lr=LR)
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=step_size, gamma=gamma)

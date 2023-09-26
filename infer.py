@@ -93,7 +93,11 @@ setup_seed(0)
 
 
 device_ids = [ int(os.environ["CUDA_VISIBLE_DEVICES"]) ]
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+if len(device_ids)>1:
+    device = torch.device(f"cuda:{device_ids[0]}" if torch.cuda.is_available() else "cpu")
+else:
+    device = torch.device(f"cuda" if torch.cuda.is_available() else "cpu")
 CANDLE_DATA_DIR=os.getenv("CANDLE_DATA_DIR")
 
 log = logging.getLogger(__name__)
@@ -257,9 +261,9 @@ def eval_model(model, test_loader, ccle_smiles):
     model.eval()
     with torch.no_grad():
         for step, (rma, var, drug_id,y) in tqdm(enumerate(test_loader)):
-            rma = rma.cuda(device=device_ids[0])
-            var = var.cuda(device=device_ids[0])
-            y = y.cuda(device=device_ids[0])
+            rma = rma.to(device)
+            var = var.to(device)
+            y = y.to(device)
             y = y.view(-1, 1)
             # print('y',y)
             y_true += y.cpu().detach().numpy().tolist()
@@ -512,7 +516,7 @@ def run(gParameters):
     model_ft = Model(dim, layer_gnn, drugs_num, n_fingerprint, similarity_softmax,
             GDSC_drug_dict, graph_dataset, n_genes, dim_lin=dim_lin)  # gihan
     """cuda"""
-    model_ft = model_ft.cuda(device=device_ids[0])  #
+    model_ft = model_ft.to(device)  #
 
     pth_name = 'best_model.pth' # gihan
     pth_name = os.path.join(output_dir, pth_name)
