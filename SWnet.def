@@ -30,7 +30,8 @@ From: pytorch/pytorch:1.12.0-cuda11.3-cudnn8-devel
 
 	#cd /usr/local/SWnet
 	cd /usr/local
-	git clone https://github.com/gihanpanapitiya/SWnet.git
+	#git clone https://github.com/gihanpanapitiya/SWnet.git
+	git clone https://github.com/JDACS4C-IMPROVE/SWnet.git
 	cd SWnet
 	git checkout to_candle
 
