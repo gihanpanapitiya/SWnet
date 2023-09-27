@@ -14,7 +14,7 @@ From: pytorch/pytorch:1.12.0-cuda11.3-cudnn8-devel
 	apt-get install build-essential -y
 	apt-get install git -y
 	apt-get install vim -y
-        apt-get install subversion -y
+    apt-get install subversion -y
 
 	chmod +x Singularity_gpu_fix.sh
         ./Singularity_gpu_fix.sh
@@ -33,7 +33,8 @@ From: pytorch/pytorch:1.12.0-cuda11.3-cudnn8-devel
 	#git clone https://github.com/gihanpanapitiya/SWnet.git
 	git clone https://github.com/JDACS4C-IMPROVE/SWnet.git
 	cd SWnet
-	git checkout to_candle
+	#git checkout to_candle
+	git checkout develop
 
         chmod +x *.sh
         cp *.sh /usr/local/bin

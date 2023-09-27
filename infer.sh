@@ -10,8 +10,10 @@
 # arg 3 CANDLE_CONFIG
 
 ### Path to your CANDLEized model's main Python script###
-CANDLE_MODEL=/usr/local/SWnet/infer.py
-#CANDLE_MODEL=infer.py
+#CANDLE_MODEL=/usr/local/SWnet/infer.py
+CANDLE_MODEL=infer.py
+IMPROVE_MODEL_DIR=${IMPROVE_MODEL_DIR:-$( dirname -- "$0" )}
+CANDLE_MODEL=${IMPROVE_MODEL_DIR}/${CANDLE_MODEL}
 
 if [ $# -lt 2 ] ; then
         echo "Illegal number of parameters"
