@@ -198,10 +198,10 @@ def run(gParameters):
         untils.get_data(data_url=data_url, cache_subdir=os.path.join(data_path, 'swn_original'), radius=radius, download=download_data, svn=False)
 
         
-        if download_data:
-            get_data(data_url, os.path.join(data_path, 'swn_original'), True, False)
-            downloader = Downloader(data_version)
-            downloader.download_candle_data(data_type=data_type, split_id=data_split_id, data_dest=data_path)
+        #if download_data:
+        #get_data(data_url, os.path.join(data_path, 'swn_original'), True, False)
+        downloader = Downloader(data_version)
+        downloader.download_candle_data(data_type=data_type, split_id=data_split_id, data_dest=data_path)
         #     download_candle_data(data_type=data_type, split_id=data_split_id, data_dest=data_path)    
 
         for p in [f'{data_type}/{data_type}_Data', f'{data_type}/drug_similarity', f'{data_type}/graph_data']:
