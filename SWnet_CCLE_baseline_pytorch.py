@@ -80,6 +80,9 @@ additional_definitions = [
     {'name': 'process_data',
      'type': bool
      },
+    {'name': 'use_proteomics_data',
+     'type': bool
+     },
     {'name': 'data_source',
      'type': str
      }  
