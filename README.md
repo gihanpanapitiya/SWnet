@@ -15,19 +15,19 @@ where SWnet.sif is the name of the Singularity container and SWnet.def is the Si
 conda env create -f environment.yaml
 
 
-
 ## Running the model
-The first step is to build the singularity container. After that the CANDLE_DATA_DIR and CUDA_VISIBLE_DEVICES environment variables have to set. After that, the different shell scripts can be used for training and evaluation.
+Set the CANDLE_DATA_DIR and CUDA_VISIBLE_DEVICES environment variables.
 
-### Training 
----
-To train the model using CCLE data, execute the following command. This is will also perform inference on the test set. The configurations are given in the swnet_ccle_model.txt. To get the results using the original data, use these settings; download_data=True, process_data=True, data_source = 'ccle_original.
+1. Download and process data
+singularity exec --nv SWnet.sif preprocess.sh  $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR
 
-```
-- singularity exec --nv SWnet.sif train.sh $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR
-```
+2. Train the model:
+singularity exec --nv SWnet.sif train.sh  $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR
 
-The outputs and the logs get written to the output_dir specified in the swnet_ccle_model.txt.
+3. Get predictions:
+singularity exec --nv SWnet.sif infer.sh  $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR
+
+
 
 
 
