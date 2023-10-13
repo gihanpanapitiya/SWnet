@@ -19,14 +19,19 @@ conda env create -f environment.yaml
 Set the CANDLE_DATA_DIR and CUDA_VISIBLE_DEVICES environment variables.
 
 1. Download and process data
+```
 singularity exec --nv SWnet.sif preprocess.sh  $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR
+```
 
 2. Train the model:
+```
 singularity exec --nv SWnet.sif train.sh  $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR
+```
 
 3. Get predictions:
+```
 singularity exec --nv SWnet.sif infer.sh  $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR
-
+```
 
 
 
