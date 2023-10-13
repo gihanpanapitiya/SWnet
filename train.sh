@@ -10,11 +10,10 @@
 # arg 3 CANDLE_CONFIG
 
 ### Path to your CANDLEized model's main Python script###
-#CANDLE_MODEL=/usr/local/SWnet/SWnet_CCLE_self-attention_train.py
-#CANDLE_MODEL=/usr/local/SWnet/SWnet_CCLE_baseline_pytorch.py
-CANDLE_MODEL=SWnet_CCLE_baseline_pytorch.py
-IMPROVE_MODEL_DIR=${IMPROVE_MODEL_DIR:-$( dirname -- "$0" )}
-CANDLE_MODEL=${IMPROVE_MODEL_DIR}/${CANDLE_MODEL}
+CANDLE_MODEL=/usr/local/SWnet/SWnet_CCLE_baseline_pytorch.py
+#CANDLE_MODEL=SWnet_CCLE_baseline_pytorch.py
+#IMPROVE_MODEL_DIR=${IMPROVE_MODEL_DIR:-$( dirname -- "$0" )}
+#CANDLE_MODEL=${IMPROVE_MODEL_DIR}/${CANDLE_MODEL}
 
 if [ $# -lt 2 ] ; then
         echo "Illegal number of parameters"
