@@ -3,17 +3,21 @@
 
 The Candle compatible code for the paper "SWnet: a deep learning model for drug response prediction from cancer genomic signatures and compound chemical structures" by Zhaorui Zuo, Penglei Wang, Xiaowei Chen, Li Tian, Hui Ge & Dahong Qian.
 
+## Install Instructions
+### Using Singularity
+To build the Singularity container, run
+```
+singularity build --fakeroot SWnet.sif SWnet.def,
+```
+where SWnet.sif is the name of the Singularity container and SWnet.def is the Singularity definition file provided in this repository
+
+### Using Conda
+conda env create -f environment.yaml
+
+
+
 ## Running the model
 The first step is to build the singularity container. After that the CANDLE_DATA_DIR and CUDA_VISIBLE_DEVICES environment variables have to set. After that, the different shell scripts can be used for training and evaluation.
-
-### Building the container
----
-Training and inference are carried out using a Singularity container. The definition file to build the container is SWnet.def.
-Use the command
-```
-singularity build --fakeroot SWnet.sif SWnet.def
-```
-to build the container. 
 
 ### Training 
 ---

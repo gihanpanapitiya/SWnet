@@ -408,3 +408,32 @@ def check_for_atoms_without_neighbors(smiles):
     return has_atoms_wothout_neighbors
 
         
+
+
+def load_generic_expression_data(file_path,
+                        gene_system_identifier = "Gene_Symbol",
+                        sep: str="\t",
+                        verbose: bool=True) -> pd.DataFrame:
+    """
+    Returns gene expression data.
+
+    Args:
+        gene_system_identifier (str or list of str): gene identifier system to use
+            options: "Entrez", "Gene_Symbol", "Ensembl", "all", or any list
+                    combination of ["Entrez", "Gene_Symbol", "Ensembl"]
+
+    Returns:
+        pd.DataFrame: dataframe with the omic data
+    """
+
+    
+    canc_col_name= "improve_sample_id"
+    # level_map encodes the relationship btw the column and gene identifier system
+    level_map = {"Ensembl": 0, "Entrez": 1, "Gene_Symbol": 2}
+    header = [i for i in range(len(level_map))]
+
+    df = pd.read_csv(file_path, sep=sep, index_col=0, header=header)
+
+    df.index.name = canc_col_name  # assign index name
+    df = set_col_names_in_multilevel_dataframe(df, level_map, gene_system_identifier)
+    return df

@@ -65,6 +65,9 @@ additional_definitions = [
     {'name': 'data_split_seed',
      'type': int
      },
+    {'name': 'data_split_id',
+     'type': int
+     },
      {'name': 'metric',
      'type': str
      },

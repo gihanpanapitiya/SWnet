@@ -195,7 +195,7 @@ def run(gParameters):
 
         st_pp = time.time() 
         print("Creating data for candle" )
-        untils.get_data(data_url, os.path.join(data_path, 'swn_original'), download_data, False)
+        untils.get_data(data_url=data_url, cache_subdir=os.path.join(data_path, 'swn_original'), radius=radius, download=download_data, svn=False)
 
         
         if download_data:

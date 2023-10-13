@@ -5,7 +5,7 @@ import os
 import urllib
 from sklearn.preprocessing import StandardScaler
 from data_utils import remove_smiles_with_noneighbor_frags
-from data_utils import DataProcessor, add_smiles
+from data_utils import DataProcessor, add_smiles, load_generic_expression_data
 
 def get_data(data_url, cache_subdir, download=True, svn=False):
     print('downloading data')
@@ -98,6 +98,16 @@ def candle_preprocess(data_type='CCLE',
     val_df = add_smiles(smiles_df,rs_val, metric)
     test_df = add_smiles(smiles_df,rs_test, metric)
 
+    if params['use_proteomics_data']:
+        gexp_ = load_generic_expression_data('proteomics_restructure_with_knn_impute.tsv')
+        use_improve_ids = gexp_.index.values
+
+        train_df = train_df[train_df.improve_sample_id.isin(use_improve_ids)]
+        val_df = val_df[val_df.improve_sample_id.isin(use_improve_ids)]
+        test_df = test_df[test_df.improve_sample_id.isin(use_improve_ids)]
+
+
+
     all_df = pd.concat([train_df, val_df, test_df], axis=0)
     all_df.reset_index(drop=True, inplace=True)
 
@@ -128,7 +138,16 @@ def candle_preprocess(data_type='CCLE',
     mutation_data = data_processor.load_cell_mutation_data(data_dir=data_path, gene_system_identifier="Entrez")
     expr_data = data_processor.load_gene_expression_data(data_dir=data_path, gene_system_identifier="Gene_Symbol")
     mutation_data = mutation_data.reset_index()
-    gene_data = mutation_data.columns[1:]
+    
+    if not params['use_proteomics_data']:
+        print('using gene expression data')
+        gene_data = mutation_data.columns[1:]
+    else:
+        print('using proteomics data')
+        expr_data = load_generic_expression_data('proteomics_restructure_with_knn_impute.tsv')
+        gene_data = expr_data.columns
+        gene_data = list(set(gene_data).intersection(mutation_data.columns[1:]))
+        print("gene data: ", len(gene_data))
 
     ext_genes = pd.read_csv(ext_gene_file,index_col=0)
     common_genes=sorted( list(set(gene_data).intersection(ext_genes.columns)) )
