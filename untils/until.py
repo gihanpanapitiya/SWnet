@@ -113,30 +113,34 @@ def get_data(data_url, cache_subdir, radius=3, download=True, svn=False, data_ty
 
         elif data_type=='GDSC':
          
-          ccle_data = os.path.join(cache_subdir,'GDSC/GDSC_Data/')
-          os.makedirs(ccle_data, exist_ok=True)
-          urllib.request.urlretrieve('https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/GDSC/GDSC_data/CCLE_DepMap.csv',
-           f'{ccle_data}/GDSC_DepMap.csv')
-          urllib.request.urlretrieve('https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/CCLE/CCLE_data/CCLE_RNAseq.csv',
-           f'{ccle_data}/CCLE_RNAseq.csv')
-          urllib.request.urlretrieve('https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/CCLE/CCLE_data/CCLE_cell_drug_labels.csv',
-           f'{ccle_data}/CCLE_cell_drug_labels.csv')
-          urllib.request.urlretrieve('https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/CCLE/CCLE_data/CCLE_smiles.csv',
-           f'{ccle_data}/CCLE_smiles.csv')
+            ccle_data = os.path.join(cache_subdir,'GDSC/GDSC_Data/')
+            os.makedirs(ccle_data, exist_ok=True)
+            # urllib.request.urlretrieve('https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/CCLE/CCLE_Data/CCLE_DepMap.csv',
+            # f'{ccle_data}/GDSC_DepMap.csv')
+        #   urllib.request.urlretrieve('https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/CCLE/CCLE_data/CCLE_RNAseq.csv',
+        #    f'{ccle_data}/CCLE_RNAseq.csv')
+            urllib.request.urlretrieve('https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/GDSC/GDSC_data/cell_drug_labels.csv',
+            f'{ccle_data}/GDSC_cell_drug_labels.csv')
+            urllib.request.urlretrieve('https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/GDSC/GDSC_data/GDSC_rma.csv',
+            f'{ccle_data}/GDSC_RNAseq.csv')
+            urllib.request.urlretrieve('https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/GDSC/GDSC_data/GDSC_variant.csv',
+            f'{ccle_data}/GDSC_DepMap.csv')
+            urllib.request.urlretrieve('https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/GDSC/GDSC_data/GDSC_smiles.csv',
+            f'{ccle_data}/GDSC_smiles.csv')
 
-          ccle_data = os.path.join(cache_subdir,'CCLE/drug_similarity/')
-          os.makedirs(ccle_data, exist_ok=True)
-          urllib.request.urlretrieve('https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/CCLE/drug_similarity/CCLE_drug_similarity.csv',
-           f'{ccle_data}/CCLE_drug_similarity.csv')
+            ccle_data = os.path.join(cache_subdir,'GDSC/drug_similarity/')
+            os.makedirs(ccle_data, exist_ok=True)
+            urllib.request.urlretrieve('https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/GDSC/drug_similarity/GDSC_drug_similarity.csv',
+            f'{ccle_data}/GDSC_drug_similarity.csv')
          
-          ccle_data = os.path.join(cache_subdir,f'CCLE/graph_data/radius{radius}')
-          os.makedirs(ccle_data, exist_ok=True)
-          urllib.request.urlretrieve(f'https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/CCLE/graph_data/radius{radius}/Smiles.txt',
-           f'{ccle_data}/Smiles.txt')
-          urllib.request.urlretrieve(f'https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/CCLE/graph_data/radius{radius}/adjacencies.npy',
-           f'{ccle_data}/adjacencies.npy')
-          urllib.request.urlretrieve(f'https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/CCLE/graph_data/radius{radius}/compounds.npy',
-           f'{ccle_data}/compounds.npy')
-          urllib.request.urlretrieve(f'https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/CCLE/graph_data/radius{radius}/fingerprint_dict.pickle',
-           f'{ccle_data}/fingerprint_dict.pickle')
+            ccle_data = os.path.join(cache_subdir,f'GDSC/graph_data/radius{radius}')
+            os.makedirs(ccle_data, exist_ok=True)
+            urllib.request.urlretrieve(f'https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/GDSC/graph_data/radius{radius}/Smiles.txt',
+            f'{ccle_data}/Smiles.txt')
+            urllib.request.urlretrieve(f'https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/GDSC/graph_data/radius{radius}/adjacencies.npy',
+            f'{ccle_data}/adjacencies.npy')
+            urllib.request.urlretrieve(f'https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/GDSC/graph_data/radius{radius}/compounds.npy',
+            f'{ccle_data}/compounds.npy')
+            urllib.request.urlretrieve(f'https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/GDSC/graph_data/radius{radius}/fingerprint_dict.pickle',
+            f'{ccle_data}/fingerprint_dict.pickle')
 

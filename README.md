@@ -12,13 +12,17 @@ singularity build --fakeroot SWnet.sif SWnet.def,
 where SWnet.sif is the name of the Singularity container and SWnet.def is the Singularity definition file provided in this repository
 
 ### Using Conda
+```
 conda env create -f environment.yaml
+```
 
 
-## Running the model
+## Running the model using the original author's data
 Set the CANDLE_DATA_DIR and CUDA_VISIBLE_DEVICES environment variables.
 
 1. Download and process data
+Make sure data_source is set to 'ccle_original' in the swnet_ccle_model.txt. Yet to test the model with original GDSC data.
+
 ```
 singularity exec --nv SWnet.sif preprocess.sh  $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR
 ```
@@ -35,6 +39,39 @@ singularity exec --nv SWnet.sif infer.sh  $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR
 
 
 
+
+## Running the model for CSA models for within-study validation
+Set the CANDLE_DATA_DIR and CUDA_VISIBLE_DEVICES environment variables.
+
+1. Download and process data. 
+Set the following parameters in the swnet_ccle_model.txt
+```
+data_source= choose one from these : 'ccle_candle', 'gcsi_candle', 'gdscv1_candle', 'gdscv2_candle', 'ctrpv2_candle'
+cross_study=False
+data_split_id=0
+metric='auc' or 'ic50'
+```
+Then run the following command,
+```
+python download_process.py
+```
+
+2. Train the model:
+```
+python SWnet_CCLE_baseline_pytorch.py
+```
+3. Get predictions:
+```
+python infer.py
+```
+
+## Running the model for CSA models for cross-study validation
+Set the following parameters in the swnet_ccle_model.txt
+```
+data_source= chose one from these: 'ccle_candle' 'gcsi_candle', 'gdscv1_candle', 'gdscv2_candle', 'ctrpv2_candle'
+cross_study=True
+data_split_id=0
+metric='auc' or 'ic50'
 
 <!-- 
 ### Data
