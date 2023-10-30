@@ -221,8 +221,8 @@ def run(gParameters):
                          ext_gene_file=ext_gene_file,
                          params=gParameters)
 
-        df_mut = pd.read_csv(os.path.join(data_path,f'{data_type}/{data_type}_Data', f'{data_type}_RNAseq.csv'), index_col=0)
-        n_genes = len(df_mut.columns)
+        # df_mut = pd.read_csv(os.path.join(data_path,f'{data_type}/{data_type}_Data', f'{data_type}_RNAseq.csv'), index_col=0)
+        # n_genes = len(df_mut.columns)
 
         if not os.path.exists(os.path.join(data_path, data_type, f'graph_data/radius{radius}/compounds')):
             print("creating graph data")

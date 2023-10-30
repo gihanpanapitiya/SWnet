@@ -85,6 +85,9 @@ additional_definitions = [
      },
     {'name': 'data_source',
      'type': str
+     },  
+    {'name': 'other_ds',
+     'type': str
      }  
 ]
 
@@ -536,8 +539,8 @@ def run(gParameters):
             untils.get_data(data_url, os.path.join(data_path, 'swn_original'), download_data, False)
 
         
-        # if download_data:
-        #     download_candle_data(data_type=data_type, split_id=data_split_id, data_dest=data_path)    
+            # if download_data:
+            #     download_candle_data(data_type=data_type, split_id=data_split_id, data_dest=data_path)    
 
             for p in [f'{data_type}/{data_type}_Data', f'{data_type}/drug_similarity', f'{data_type}/graph_data']:
                 path = os.path.join(data_path, p)
@@ -579,7 +582,7 @@ def run(gParameters):
     graph_dataset = list(zip(compounds, adjacencies))
 
     """Load CCLE data."""
-    rma, var, smiles, all_smiles = untils.load_CCLE_data(data_path, data_type)
+    rma, var, smiles, all_smiles = untils.load_CCLE_data(data_path, data_type, cross_study=cross_study)
 
     smiles_vals = smiles["smiles"].values
     smiles_index = smiles.index
@@ -685,7 +688,7 @@ def run(gParameters):
 
     """Save the gene weights """
     fuse = pd.DataFrame(model_ft.fuse_weight.cpu().detach().numpy(),
-                        index=smiles_index, columns=gene)
+                        index=np.arange(drugs_num), columns=gene)
 
     os.makedirs(os.path.join(output_dir, "log/logs/gene_weights/"), exist_ok=True)
     fuse_name = os.path.join(output_dir, 'log/logs/gene_weights/' + str(round(test_mse, 4)) + '_' + file_name + '_r' + str(radius) + '_s' + str(split_case) + '.csv')

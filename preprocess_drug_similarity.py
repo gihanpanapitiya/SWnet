@@ -29,7 +29,8 @@ def prepare_similarity_data(data_path, data_type, args):
 # if __name__ == "__main__":
 
     if args["cross_study"]:
-        GDSC_smiles_path = data_path+f'/{data_type}/{data_type}_Data/all_smiles.csv' # changing this for comatibility with all the data sources, have to find a better fix
+        # GDSC_smiles_path = data_path+f'/{data_type}/{data_type}_Data/all_smiles.csv' # changing this for comatibility with all the data sources, have to find a better fix
+        GDSC_smiles_path = data_path+f'/{data_type}/{data_type}_Data/all_smiles2.csv' # changing this for comatibility with all the data sources, have to find a better fix
     else:
         GDSC_smiles_path = data_path+f'/{data_type}/{data_type}_Data/{data_type}_smiles.csv' # changing this for comatibility with all the data sources, have to find a better fix
     GDSC_smiles = pd.read_csv(GDSC_smiles_path, index_col=0)

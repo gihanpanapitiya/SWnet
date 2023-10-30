@@ -76,6 +76,9 @@ additional_definitions = [
      },
      {'name': 'process_data',
      'type': bool
+     },
+     {'name': 'cross_study',
+     'type': bool
      }
 ]
 
@@ -260,7 +263,7 @@ def eval_model(model, test_loader, ccle_smiles):
     smiles = []
     model.eval()
     with torch.no_grad():
-        for step, (rma, var, drug_id,y) in tqdm(enumerate(test_loader)):
+        for step, (rma, var, drug_id, y) in tqdm(enumerate(test_loader)):
             rma = rma.to(device)
             var = var.to(device)
             y = y.to(device)
@@ -454,6 +457,7 @@ def run(gParameters):
     adjacencies = load_tensor(dir_input + 'adjacencies', torch.FloatTensor)
     fingerprint_dict = load_pickle(dir_input + 'fingerprint_dict.pickle')
     n_fingerprint = len(fingerprint_dict)
+    print('loaded data')
 
     """Create a dataset and split it into train/dev/test."""
     graph_dataset = list(zip(compounds, adjacencies))

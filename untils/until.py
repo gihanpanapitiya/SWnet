@@ -60,7 +60,8 @@ def load_CCLE_data(base_path, data_type, cross_study=False):
     GDSC_variant_path = base_path+f"/{data_type}/{data_type}_Data/{data_type}_DepMap.csv"
     GDSC_smiles_path = base_path+f"/{data_type}/{data_type}_Data/{data_type}_smiles.csv"
     if cross_study:
-        all_smiles_path = base_path+f"/{data_type}/{data_type}_Data/all_smiles.csv"
+        all_smiles_path = base_path+f"/{data_type}/{data_type}_Data/all_smiles2.csv"
+        # all_smiles_path = base_path+f"/{data_type}/{data_type}_Data/all_smiles.csv"
         all_smiles = pd.read_csv(all_smiles_path, index_col=0)
     else:
         all_smiles = None

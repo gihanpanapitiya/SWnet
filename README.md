@@ -68,9 +68,10 @@ python infer.py
 ## Running the model for CSA models for cross-study validation
 
 1. Download and process data. 
-Set the following parameters in the swnet_ccle_model.txt
+Set the following parameters in the swnet_ccle_model.txt. We have to set cross_study=True for this case.
 ```
-data_source= chose one from these: 'ccle_candle' 'gcsi_candle', 'gdscv1_candle', 'gdscv2_candle', 'ctrpv2_candle'
+data_source = ctrpv2_candle # the name of the data_set the model will be trained with (chose one from these: 'ccle_candle' 'gcsi_candle', 'gdscv1_candle', 'gdscv2_candle', 'ctrpv2_candle')
+other_ds = 'ccle_candle, gcsi_candle, gdscv1_candle' # other datasets the trained model will be tested with. specify these datasets seperated by a comma. eg: 'ccle_candle' 'gcsi_candle', 'gdscv1_candle'
 cross_study=True
 data_split_id=0
 metric='auc' or 'ic50'
@@ -81,15 +82,17 @@ Then run the following command,
 python download_process.py
 ```
 
+This will take a while.
+
 2. Train the model:
 ```
 python SWnet_CCLE_baseline_pytorch.py
 ```
 
 3. Get predictions:
-Change the data_source to what you want to test on and  run infer.py
+Change the data_source to what you want to test on and run infer.py as follows.
 ```
-python infer.py
+python infer.py --data_source ccle_candle
 ```
 
 

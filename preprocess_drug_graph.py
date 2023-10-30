@@ -8,9 +8,38 @@ import numpy as np
 import pandas as pd
 
 from rdkit import Chem
+from data_utils import candle_data_dict
+from preprocess import candle_preprocess
 
+from data_utils import Downloader, DataProcessor, add_smiles, remove_smiles_with_noneighbor_frags
+CANDLE_DATA_DIR=os.getenv("CANDLE_DATA_DIR")
 
+def create_data_dirs(data_path, data_type):
 
+    for p in [f'{data_type}/{data_type}_Data', f'{data_type}/drug_similarity', f'{data_type}/graph_data']:
+        path = os.path.join(data_path, p)
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+def get_data_type_data(data_type, data_path, opt):
+
+    metric = opt['metric']
+    data_processor = DataProcessor(opt['data_version'])
+    split_id = opt['data_split_id']
+
+    rs_train = data_processor.load_drug_response_data(data_path, data_type=data_type, split_id=split_id, split_type='train', response_type=metric)
+    rs_val = data_processor.load_drug_response_data(data_path, data_type=data_type, split_id=split_id, split_type='val', response_type=metric)
+    rs_test = data_processor.load_drug_response_data(data_path, data_type=data_type, split_id=split_id, split_type='test', response_type=metric)
+
+    smiles_df = data_processor.load_smiles_data(data_path)
+    smiles_df = remove_smiles_with_noneighbor_frags(smiles_df)
+
+    train_df = add_smiles(smiles_df,rs_train, metric)
+    val_df = add_smiles(smiles_df,rs_val, metric)
+    test_df = add_smiles(smiles_df,rs_test, metric)
+
+    df1 = pd.concat([train_df, val_df,test_df], axis=0)
+    return df1
 
 
 # if __name__ == "__main__":
@@ -21,6 +50,10 @@ def prepare_graph_data(data_path, opt):
     # args = parser.parse_args()
     radius = opt['radius']
     data_type = opt['data_type']
+    other_ds = opt['other_ds']
+    data_version = opt['data_version']
+    radius = opt['radius']
+
     # data_path = opt['data_path']
     print('radius = {}'.format(radius))
 
@@ -94,12 +127,56 @@ def prepare_graph_data(data_path, opt):
 
 
 
+
+
     """Load a dataset."""
     print('creating graph data', data_type)
     if opt["cross_study"]:
-        filename = data_path+f'/{data_type}/{data_type}_Data/all_smiles.csv' # changing this for comatibility with all the data sources, have to find a better fix
+            other_ds = [i.strip() for i in  opt['other_ds'].split(',')]
+            other_ds2 = [data_type] + [candle_data_dict[ds] for ds in other_ds]
+            print('other ds: ', other_ds)
+            data_split_id = opt['data_split_id']
+            data_path=os.path.join(CANDLE_DATA_DIR, opt['model_name'], 'Data')
+            downloader = Downloader(data_version)   
+            dfs=[]         
+            for ds in other_ds2:
+
+                data_type_other = ds
+                create_data_dirs(data_path, data_type_other)
+                downloader.download_candle_data(data_type=data_type_other, split_id=data_split_id, data_dest=data_path)
+
+                ext_gene_file = os.path.join(data_path, 'swn_original','CCLE/CCLE_Data/CCLE_DepMap.csv')
+  
+                candle_preprocess(data_type=data_type_other, 
+                                    metric=opt['metric'], 
+                                    data_path=data_path,
+                                    split_id=data_split_id,
+                                    ext_gene_file=ext_gene_file,
+                                    params=opt)
+                dfs.append(get_data_type_data(data_type_other, data_path, opt))
+
+            dfs = pd.concat(dfs, axis=0)
+            dfs.drop_duplicates(subset=['smiles'], inplace=True)
+            dfs.reset_index(drop=True, inplace=True)
+            dfs = dfs[['improve_chem_id', 'smiles']]
+            dfs.set_index('improve_chem_id', inplace=True)
+            
+            filename = data_path+f'/{data_type}/{data_type}_Data/all_smiles2.csv' # changing this for comatibility with all the data sources, have to find a better fix
+            dfs.to_csv(filename)
+
+            for ds in other_ds:
+                print('creating ln')
+                dsn = candle_data_dict[ds]
+                os.system(f'ln -s ../../{data_type}/{data_type}_Data/all_smiles2.csv {data_path}/{dsn}/{dsn}_Data/all_smiles2.csv')
+                os.system(f'ln -s ../../{data_type}/graph_data/radius{radius} {data_path}/{dsn}/graph_data/radius{radius}')
+                os.system(f'ln -s ../../{data_type}/drug_similarity/{data_type}_drug_similarity.csv {data_path}/{dsn}/drug_similarity/{dsn}_drug_similarity.csv')
+                
+
+
     else:
         filename = data_path+f'/{data_type}/{data_type}_Data/{data_type}_smiles.csv' # changing this for comatibility with all the data sources, have to find a better fix
+
+    # return None
 
     print('----------------------')
     print(filename)
