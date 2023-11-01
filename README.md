@@ -109,8 +109,9 @@ Then run the following command,
 ```
 python preprocess.py
 ```
-<span style="background-color: #3498DB">singularity</span>
+
 ```
+<span style="background-color: #3498DB">singularity</span>
 singularity exec --nv SWnet.sif preprocess.sh  $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR --config_file /path/to/*_model.txt
 ```
 This will take a while.
