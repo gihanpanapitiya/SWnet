@@ -1,183 +1,264 @@
-import pandas as pd
-# import improve_utils
-import data_utils
+import logging
 import os
+import torch
+import torch.nn as nn
+import torch.utils.data as Data
+from torch.utils.data import Dataset, DataLoader
+from torch.optim import lr_scheduler
+import os
+import copy
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
+import time
+from datetime import datetime
+import sys
+import pickle
+import argparse
+import untils.until as untils
+from rdkit import Chem
+import random
+import candle
+import json
+import logging
+from preprocess_drug_graph import prepare_graph_data
+from preprocess_drug_similarity import prepare_similarity_data
 import urllib
-from sklearn.preprocessing import StandardScaler
-from data_utils import remove_smiles_with_noneighbor_frags
-from data_utils import DataProcessor, add_smiles, load_generic_expression_data
+from process import candle_preprocess
+from sklearn.model_selection import train_test_split
+from data_utils import Downloader, DataProcessor
+# from data_utils import download_candle_data
+# torch.manual_seed(0)
+from process import get_data
 
-def get_data(data_url, cache_subdir, download=True, svn=False):
-    print('downloading data')
-    # cache_subdir = os.path.join(CANDLE_DATA_DIR, 'SWnet', 'Data')
+file_path = os.path.dirname(os.path.realpath(__file__))
+additional_definitions = [
+    {'name': 'batch_size',
+     'type': int
+     },
+    {'name': 'lr',
+     'type': float,
+     'help': 'learning rate'
+     },
+    {'name': 'epochs',
+     'type': int
+     },
+    {'name': 'step_size',
+     'type': int
+     },
+    {'name': 'gamma',
+     'type': float
+     },
+    {'name': 'radius',
+     'type': int
+     },
+    {'name': 'dim',
+     'type': int
+     },
+    {'name': 'layer_gnn',
+     'type': int
+     },
+    {'name': 'data_type',
+     'type': str
+     },
+    {'name': 'data_url',
+     'type': str
+     },
+    {'name': 'data_split_seed',
+     'type': int
+     },
+     {'name': 'metric',
+     'type': str
+     },
+    {'name': 'download_data',
+     'type': bool
+     },
+    {'name': 'cross_study',
+     'type': bool
+     },
+    {'name': 'data_source',
+     'type': str
+     }  
+]
 
-    if download and svn:
-        os.makedirs(cache_subdir, exist_ok=True)
-        os.system(f'svn checkout {data_url} {cache_subdir}')
-        print('downloading done')
-
-    elif download and svn==False:
-        # os.makedirs(cache_subdir, exist_ok=True)
-        ccle_data = os.path.join(cache_subdir,'CCLE/CCLE_Data/')
-        os.makedirs(ccle_data, exist_ok=True)
-        urllib.request.urlretrieve('https://raw.githubusercontent.com/zuozhaorui/SWnet/master/data/CCLE/CCLE_Data/CCLE_DepMap.csv',
-         f'{ccle_data}/CCLE_DepMap.csv')
-
-
-
-# def add_smiles(data_dir, df, metric):
-    
-#     # df = rs_train.copy()
-#     smiles_df = data_utils.load_smiles_data(data_dir)
-#     data_smiles_df = pd.merge(df, smiles_df, on = "improve_chem_id", how='left') 
-#     data_smiles_df = data_smiles_df.dropna(subset=[metric])
-#     data_smiles_df = data_smiles_df[['improve_sample_id', 'smiles', 'improve_chem_id', metric]]
-#     data_smiles_df = data_smiles_df.drop_duplicates()
-#     data_smiles_df.dropna(inplace=True)
-#     data_smiles_df = data_smiles_df.reset_index(drop=True)
-
-#     return data_smiles_df
-
-
-def save_split_files(df, file_name, metric='ic50'):
-
-    tmp = df[['improve_sample_id', 'improve_chem_id', metric]]
-    tmp = tmp.rename(columns={'improve_sample_id':'cell_line_id',
-                        'improve_chem_id':'drug_id',
-                        metric:'labels'})
-    tmp.to_csv(file_name, index=False)
-
-def candle_preprocess(data_type='CCLE', 
-                         metric='ic50',
-                         split_id=0, 
-                         data_path=None,
-                         ext_gene_file=None, params=None):
-        
-    # data_type='CCLE'
-    # metric='ic50'
-#     rs_all = improve_utils.load_single_drug_response_data(source=data_type, split=0,
-#                                                         split_type=["train", "test", 'val'],
-#                                                         y_col_name=metric)
-
-    # rs_train = improve_utils.load_single_drug_response_data(source=data_type,
-    #                                                         split=0, split_type=["train"],
-    #                                                         y_col_name=metric)
-    # rs_test = improve_utils.load_single_drug_response_data(source=data_type,
-    #                                                     split=0,
-    #                                                     split_type=["test"],
-    #                                                     y_col_name=metric)
-    # rs_val = improve_utils.load_single_drug_response_data(source=data_type,
-    #                                                     split=0,
-    #                                                     split_type=["val"],
-    #                                                     y_col_name=metric)
-
-    data_processor = DataProcessor(params['data_version'])
+required = None
 
 
-    rs_train = data_processor.load_drug_response_data(data_path, data_type=data_type, split_id=split_id, split_type='train', response_type=metric)
-    rs_val = data_processor.load_drug_response_data(data_path, data_type=data_type, split_id=split_id, split_type='val', response_type=metric)
-    rs_test = data_processor.load_drug_response_data(data_path, data_type=data_type, split_id=split_id, split_type='test', response_type=metric)
+def setup_seed(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.backends.cudnn.deterministic = True
+
+setup_seed(0)
 
 
-    print("data shape: ", rs_train.shape, rs_val.shape, rs_test.shape)
-    # rs_train = data_utils.load_drug_response_data(data_path, data_type=data_type, split_id=split_id, split_type='train', 
-    #         response_type=metric, sep="\t", dropna=True)
-    # rs_val = data_utils.load_drug_response_data(data_path, data_type=data_type, split_id=split_id, split_type='val', 
-    #         response_type=metric, sep="\t", dropna=True)
-    # rs_test = data_utils.load_drug_response_data(data_path, data_type=data_type, split_id=split_id, split_type='test', 
-    #         response_type=metric, sep="\t", dropna=True)
+device_ids = [ int(os.environ["CUDA_VISIBLE_DEVICES"]) ]
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+CANDLE_DATA_DIR=os.getenv("CANDLE_DATA_DIR")
 
 
+def load_tensor(file_name, dtype):
+    with open(file_name, 'rb') as f:
+        file = pickle.load(f)
+    return [dtype(d).to(device) for d in file]
 
-    smiles_df = data_processor.load_smiles_data(data_path)
-    smiles_df = remove_smiles_with_noneighbor_frags(smiles_df)
-    # smiles_path = os.path.join(data_path, 'drug_SMILES.tsv')
-    # smiles_df.to_csv(smiles_path, sep='\t', index=False)
-
-    train_df = add_smiles(smiles_df,rs_train, metric)
-    val_df = add_smiles(smiles_df,rs_val, metric)
-    test_df = add_smiles(smiles_df,rs_test, metric)
-
-    # if params['use_proteomics_data']:
-
-    gexp_ = load_generic_expression_data('proteomics_restructure_with_knn_impute.tsv')
-    use_improve_ids = gexp_.index.values
-
-    train_df = train_df[train_df.improve_sample_id.isin(use_improve_ids)]
-    val_df = val_df[val_df.improve_sample_id.isin(use_improve_ids)]
-    test_df = test_df[test_df.improve_sample_id.isin(use_improve_ids)]
+def load_pickle(file_name):
+    with open(file_name, 'rb') as f:
+        return pickle.load(f)
 
 
+class CreateDataset(Dataset):
+    def __init__(self, rma_all, var_all, id):
+        self.rma_all = rma_all
+        self.var_all = var_all
+        self.all_id = id.values
 
-    all_df = pd.concat([train_df, val_df, test_df], axis=0)
-    all_df.reset_index(drop=True, inplace=True)
+    def __len__(self):
+        return len(self.all_id)
 
-    save_split_files(train_df, data_path+f'/{data_type}/{data_type}_Data/train.csv', metric)
-    save_split_files(val_df, data_path+f'/{data_type}/{data_type}_Data/val.csv', metric)
-    save_split_files(test_df, data_path+f'/{data_type}/{data_type}_Data/test.csv', metric)
+    def __getitem__(self, idx):
+        cell_line_id = self.all_id[idx][0]
+        drug_id = self.all_id[idx][1]
+        y = np.float32(self.all_id[idx][2])
+
+        rma = self.rma_all.loc[cell_line_id].values.astype('float32')
+        var = self.var_all.loc[cell_line_id].values.astype('float32')
+        return rma, var, drug_id, y
 
 
 
-    smi_candle = all_df[['improve_chem_id', 'smiles']]
-    # smi_candle = data_utils.load_smiles_data(data_path)
-    smi_candle.drop_duplicates(inplace=True)
-    smi_candle.reset_index(drop=True, inplace=True)
-    smi_candle.set_index('improve_chem_id', inplace=True)
-    smi_candle.index.name=None
-    smi_candle.to_csv(data_path+f'/{data_type}/{data_type}_Data/{data_type}_smiles.csv')
-
-    smi_candle = data_processor.load_smiles_data(data_path)
-    smi_candle.drop_duplicates(inplace=True)
-    smi_candle.reset_index(drop=True, inplace=True)
-    smi_candle.set_index('improve_chem_id', inplace=True)
-    smi_candle.index.name=None
-    smi_candle.to_csv(data_path+f'/{data_type}/{data_type}_Data/all_smiles.csv')
+def add_natoms(df):
+    natoms = [Chem.MolFromSmiles(i).GetNumAtoms() for i in df.smiles]
+    df['natoms'] = natoms
 
 
 
+def run(gParameters):
 
-    mutation_data = data_processor.load_cell_mutation_data(data_dir=data_path, gene_system_identifier="Entrez")
-    expr_data = data_processor.load_gene_expression_data(data_dir=data_path, gene_system_identifier="Gene_Symbol")
-    mutation_data = mutation_data.reset_index()
-    
-    if not params['use_proteomics_data']:
-        print('using gene expression data')
-        gene_data = mutation_data.columns[1:]
-    else:
-        print('using proteomics data')
-        expr_data = load_generic_expression_data('proteomics_restructure_with_knn_impute.tsv')
-        gene_data = expr_data.columns
-        gene_data = list(set(gene_data).intersection(mutation_data.columns[1:]))
-        print("gene data: ", len(gene_data))
+    """hyper-parameter"""
 
-    ext_genes = pd.read_csv(ext_gene_file,index_col=0)
-    common_genes=sorted( list(set(gene_data).intersection(ext_genes.columns)) )
-    # common_genes=list(set(gene_data).intersection(ext_genes))
+    print(gParameters)
+    LR = gParameters['lr']
+    BATCH_SIZE = gParameters['batch_size']
+    num_epochs = gParameters['epochs']
+    step_size = gParameters['step_size']
+    gamma = gParameters['gamma']
+    split_case = gParameters['split_case']
+    radius = gParameters['radius']
+    dim = gParameters['dim']
+    layer_gnn = gParameters['layer_gnn']
+    output_dir = gParameters['output_dir']
+    data_url = gParameters['data_url']
+    download_data = gParameters['download_data']
+    metric = gParameters['metric']
+    data_path=os.path.join(CANDLE_DATA_DIR, gParameters['model_name'], 'Data')
+    data_source = gParameters['data_source']
+    data_split_id = gParameters['data_split_id']
+    cross_study = gParameters['cross_study']
+    data_version = gParameters['data_version']
 
-    mut = mutation_data[mutation_data.improve_sample_id.isin(all_df.improve_sample_id)]
-    
+    print("BATCH_SIZE: ", BATCH_SIZE)
 
-    mut = mut.loc[:, ['improve_sample_id'] + common_genes ]
-    mut.improve_sample_id.nunique() == mut.shape[0]
-    mut.set_index('improve_sample_id', inplace=True)
-    mut = mut.gt(0).astype(int)
-
-    expr = expr_data[expr_data.index.isin(mut.index)]
-    expr = expr.loc[:, common_genes]
-
-    sc = StandardScaler()
-
-    expr[:] = sc.fit_transform(expr[:])
+    """log"""
+    dt = datetime.now() 
+    file_name = os.path.basename(__file__)[:-3]
+    date = dt.strftime('_%Y%m%d_%H_%M_%S')
 
 
-    expr.index.name=None
-    expr.to_csv(data_path+f'/{data_type}/{data_type}_Data/{data_type}_RNAseq.csv')
 
-    mut.index.name=None
-    mut.to_csv(data_path+f'/{data_type}/{data_type}_Data/{data_type}_DepMap.csv')
+    if 'original' in data_source:
+        n_genes=1478
+        # currently works with original CCLE data
+        if data_source == 'ccle_original':
+            data_type='CCLE'
+        elif data_source == 'gdsc_original':
+            data_type='GDSC'
 
-    all_df=all_df[['improve_sample_id', 'improve_chem_id', metric]]
-    all_df=all_df.rename(columns={'improve_sample_id':'cell_line_id',
-                        'improve_chem_id':'drug_id',
-                        metric:'labels'})
-    all_df.to_csv(data_path+f'/{data_type}/{data_type}_Data/{data_type}_cell_drug_labels.csv', index=False)
+        untils.get_data(data_url=data_url, cache_subdir=data_path, radius=radius, download=True, data_type=data_type)
+        gParameters['data_type'] = data_type
+        prepare_graph_data(data_path, gParameters)
+        prepare_similarity_data(data_path, data_type, gParameters)
+
+
+    # elif gParameters['data_type'] == 'ccle_candle':
+    elif 'candle' in data_source:
+        if data_source == 'ccle_candle':
+            data_type = "CCLE"
+        elif data_source == 'ctrpv2_candle':
+            data_type = "CTRPv2"
+        elif data_source == 'gdscv1_candle':
+            data_type = "GDSCv1"
+        elif data_source == 'gdscv2_candle':
+            data_type = "GDSCv2"
+        elif data_source == 'gcsi_candle':
+            data_type = "gCSI"
+
+        gParameters['data_type'] = data_type
+
+        st_pp = time.time() 
+        print("Creating data for candle" )
+        untils.get_data(data_url=data_url, cache_subdir=os.path.join(data_path, 'swn_original'), radius=radius, download=True, svn=False)
+        #if download_data:
+        #get_data(data_url, os.path.join(data_path, 'swn_original'), True, False)
+        downloader = Downloader(data_version)
+        downloader.download_candle_data(data_type=data_type, split_id=data_split_id, data_dest=data_path)
+        #     download_candle_data(data_type=data_type, split_id=data_split_id, data_dest=data_path)    
+
+        for p in [f'{data_type}/{data_type}_Data', f'{data_type}/drug_similarity', f'{data_type}/graph_data']:
+            path = os.path.join(data_path, p)
+            if not os.path.exists(path):
+                os.makedirs(path)
+
+
+        ext_gene_file = os.path.join(data_path, 'swn_original','CCLE/CCLE_Data/CCLE_DepMap.csv')
+  
+        candle_preprocess(data_type=data_type, 
+                         metric=metric, 
+                         data_path=data_path,
+                         split_id=data_split_id,
+                         ext_gene_file=ext_gene_file,
+                         params=gParameters)
+
+        # df_mut = pd.read_csv(os.path.join(data_path,f'{data_type}/{data_type}_Data', f'{data_type}_RNAseq.csv'), index_col=0)
+        # n_genes = len(df_mut.columns)
+
+        if not os.path.exists(os.path.join(data_path, data_type, f'graph_data/radius{radius}/compounds')):
+            print("creating graph data")
+            prepare_graph_data(data_path, gParameters)
+        # os.system(f"python preprocess_drug_graph.py --radius {radius} --data_path {data_path}")
+        if not os.path.exists(os.path.join(data_path, data_type, f'drug_similarity/{data_type}_drug_similarity.csv')):
+            print("creating similarity data")
+            prepare_similarity_data(data_path, data_type, gParameters)
+        pp_time = time.time() - st_pp
+
+
+class SWnet_candle(candle.Benchmark):
+
+        def set_locals(self):
+            if required is not None:
+                self.required = set(required)
+            if additional_definitions is not None:
+                self.additional_definitions = additional_definitions
+
+def initialize_parameters():
+    """ Initialize the parameters for the GraphDRP benchmark. """
+    print("Initializing parameters\n")
+    swnet_params = SWnet_candle(
+        filepath = file_path,
+        defmodel = "swnet_ccle_model.txt",
+        framework = "pytorch",
+        prog="SWnet",
+        desc="CANDLE compliant SWnet",
+    )
+    gParameters = candle.finalize_parameters(swnet_params)
+    return gParameters
+
+if __name__ == '__main__':
+
+    gParameters = initialize_parameters()
+    print(gParameters)
+    run(gParameters)
+    print("Done preprocessing.")
+

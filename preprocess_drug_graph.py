@@ -9,7 +9,7 @@ import pandas as pd
 
 from rdkit import Chem
 from data_utils import candle_data_dict
-from preprocess import candle_preprocess
+from process import candle_preprocess
 
 from data_utils import Downloader, DataProcessor, add_smiles, remove_smiles_with_noneighbor_frags
 CANDLE_DATA_DIR=os.getenv("CANDLE_DATA_DIR")

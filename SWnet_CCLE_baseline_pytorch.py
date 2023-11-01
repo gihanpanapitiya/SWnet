@@ -24,7 +24,7 @@ import logging
 from preprocess_drug_graph import prepare_graph_data
 from preprocess_drug_similarity import prepare_similarity_data
 import urllib
-from preprocess import candle_preprocess
+from process import candle_preprocess
 from sklearn.model_selection import train_test_split
 # from data_utils import download_candle_data
 # torch.manual_seed(0)
