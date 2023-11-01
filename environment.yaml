@@ -58,7 +58,7 @@ dependencies:
     - pandas==2.1.1
     - patsy==0.5.3
     - pillow==10.0.1
-    - protobuf==3.20.0
+    - protobuf==3.19
     - pyerfa==2.0.0.3
     - pyparsing==3.1.1
     - python-dateutil==2.8.2
@@ -73,5 +73,5 @@ dependencies:
     - tqdm==4.66.1
     - tzdata==2023.3
     - urllib3==2.0.6
-    - candle @ git+https://github.com/ECP-CANDLE/candle_lib.git
+    - candle @ git+https://github.com/ECP-CANDLE/candle_lib@develop
 prefix: /homes/ac.gpanapitiya/.conda/envs/TMP

@@ -17,6 +17,7 @@ conda env create -f environment.yaml
 conda activate swnet
 ```
 
+For each of the following calculations use a seperate CANDLE_DATA_DIR
 
 ## Running the model using the original author's data
 Set the CANDLE_DATA_DIR and CUDA_VISIBLE_DEVICES environment variables.
