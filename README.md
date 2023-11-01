@@ -26,7 +26,7 @@ For each of the following calculations use a seperate CANDLE_DATA_DIR
 Set the CANDLE_DATA_DIR and CUDA_VISIBLE_DEVICES environment variables.
 
 1. Download and process data
-Make sure data_source is set to 'ccle_original' in the swnet_ccle_model.txt. Yet to test the model with original GDSC data.
+Make sure data_source is set to 'ccle_original' in the swnet_ccle_model.txt. Yet to test the model with original GDSC data. Make sure cross_study is set to False (cross_study=False).
 
 ```
 python preprocess.py
