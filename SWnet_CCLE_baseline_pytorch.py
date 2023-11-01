@@ -104,7 +104,7 @@ def setup_seed(seed):
 setup_seed(0)
 
 
-device_ids =  [int(os.environ["CUDA_VISIBLE_DEVICES"])] 
+# device_ids =  [int(os.environ["CUDA_VISIBLE_DEVICES"])] 
 device_ids =os.getenv("CUDA_VISIBLE_DEVICES")
 if len(device_ids) >1:
     device = torch.device(f"cuda:{device_ids[0]}" if torch.cuda.is_available() else "cpu")
