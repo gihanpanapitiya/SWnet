@@ -55,7 +55,7 @@ Set the CANDLE_DATA_DIR and CUDA_VISIBLE_DEVICES environment variables.
 1. Download and process data. 
 Set the following parameters in the swnet_ccle_model.txt
 ```
-data_source = choose one from these : 'ccle_candle', 'gcsi_candle', 'gdscv1_candle', 'gdscv2_candle', 'ctrpv2_candle'
+data_source =  ccle_candle # choose one from these : 'ccle_candle', 'gcsi_candle', 'gdscv1_candle', 'gdscv2_candle', 'ctrpv2_candle'
 cross_study=False
 data_split_id=0
 metric='auc' or 'ic50'
