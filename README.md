@@ -117,8 +117,9 @@ This will take a while.
 ```
 python SWnet_CCLE_baseline_pytorch.py
 ```
-<span style="background-color: #3498DB">singularity</span>
+
 ```
+<span style="background-color: #3498DB">singularity</span>
 singularity exec --nv SWnet.sif train.sh  $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR --config_file /path/to/*_model.txt
 ```
 
