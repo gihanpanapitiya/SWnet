@@ -1,5 +1,7 @@
-name: TMP
+name: swnet
 channels:
+  - https://conda.anaconda.org/rdkit
+  - pytorch
   - defaults
 dependencies:
   - _libgcc_mutex=0.1=main
@@ -43,7 +45,6 @@ dependencies:
   - zlib=1.2.13=h5eee18b_0
   - pip:
     - astropy==5.3.4
-    - candle==0.0.1
     - certifi==2023.7.22
     - charset-normalizer==3.3.0
     - contourpy==1.1.1
@@ -72,4 +73,5 @@ dependencies:
     - tqdm==4.66.1
     - tzdata==2023.3
     - urllib3==2.0.6
+    - candle @ git+https://github.com/ECP-CANDLE/candle_lib.git
 prefix: /homes/ac.gpanapitiya/.conda/envs/TMP
