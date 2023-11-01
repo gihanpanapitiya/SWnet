@@ -94,7 +94,8 @@ def setup_seed(seed):
 setup_seed(0)
 
 
-device_ids = [ int(os.environ["CUDA_VISIBLE_DEVICES"]) ]
+# device_ids = [ int(os.environ["CUDA_VISIBLE_DEVICES"]) ]
+device_ids = os.getenv("CUDA_VISIBLE_DEVICES")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 CANDLE_DATA_DIR=os.getenv("CANDLE_DATA_DIR")
 
