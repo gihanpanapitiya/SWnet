@@ -24,17 +24,26 @@ Set the CANDLE_DATA_DIR and CUDA_VISIBLE_DEVICES environment variables.
 Make sure data_source is set to 'ccle_original' in the swnet_ccle_model.txt. Yet to test the model with original GDSC data.
 
 ```
-singularity exec --nv SWnet.sif preprocess.sh  $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR
+python preprocess.py
+```
+```
+singularity exec --nv SWnet.sif preprocess.sh  $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR --config_file /path/to/*_model.txt
 ```
 
 2. Train the model:
 ```
-singularity exec --nv SWnet.sif train.sh  $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR
+python SWnet_CCLE_baseline_pytorch.py
+```
+```
+singularity exec --nv SWnet.sif train.sh  $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR --config_file /path/to/*_model.txt
 ```
 
 3. Get predictions:
 ```
-singularity exec --nv SWnet.sif infer.sh  $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR
+python infer.py
+```
+```
+singularity exec --nv SWnet.sif infer.sh  $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR --config_file /path/to/*_model.txt
 ```
 
 
@@ -46,53 +55,84 @@ Set the CANDLE_DATA_DIR and CUDA_VISIBLE_DEVICES environment variables.
 1. Download and process data. 
 Set the following parameters in the swnet_ccle_model.txt
 ```
-data_source= choose one from these : 'ccle_candle', 'gcsi_candle', 'gdscv1_candle', 'gdscv2_candle', 'ctrpv2_candle'
+data_source = choose one from these : 'ccle_candle', 'gcsi_candle', 'gdscv1_candle', 'gdscv2_candle', 'ctrpv2_candle'
 cross_study=False
 data_split_id=0
 metric='auc' or 'ic50'
 ```
 Then run the following command,
 ```
-python download_process.py
+python preprocess.py
 ```
+```
+singularity exec --nv SWnet.sif preprocess.sh  $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR --config_file /path/to/*_model.txt
+```
+
 
 2. Train the model:
 ```
 python SWnet_CCLE_baseline_pytorch.py
 ```
+```
+singularity exec --nv SWnet.sif train.sh  $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR --config_file /path/to/*_model.txt
+```
+
+
 3. Get predictions:
 ```
 python infer.py
 ```
+```
+singularity exec --nv SWnet.sif infer.sh  $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR --config_file /path/to/*_model.txt
+```
+
 
 ## Running the model for CSA models for cross-study validation
 
 1. Download and process data. 
 Set the following parameters in the swnet_ccle_model.txt. We have to set cross_study=True for this case.
+For the 'data_source' field, provide the name of the dataset which the model is trained on.
 ```
 data_source = ctrpv2_candle # the name of the data_set the model will be trained with (chose one from these: 'ccle_candle' 'gcsi_candle', 'gdscv1_candle', 'gdscv2_candle', 'ctrpv2_candle')
-other_ds = 'ccle_candle, gcsi_candle, gdscv1_candle' # other datasets the trained model will be tested with. specify these datasets seperated by a comma. eg: 'ccle_candle' 'gcsi_candle', 'gdscv1_candle'
+```
+In the 'other_ds' field, provide the datasets which the trained model will be evaluated with.
+```
+other_ds = 'ccle_candle, gcsi_candle, gdscv1_candle, gdscv2_candle' # other datasets the trained model will be tested with. specify these datasets seperated by a comma. eg: 'ccle_candle' 'gcsi_candle', 'gdscv1_candle'
+```
 cross_study=True
 data_split_id=0
-metric='auc' or 'ic50'
+metric='auc' # or 'ic50'
 
 ```
 Then run the following command,
 ```
-python download_process.py
+python preprocess.py
 ```
-
+```
+singularity exec --nv SWnet.sif preprocess.sh  $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR --config_file /path/to/*_model.txt
+```
 This will take a while.
 
 2. Train the model:
 ```
 python SWnet_CCLE_baseline_pytorch.py
 ```
+```
+singularity exec --nv SWnet.sif train.sh  $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR --config_file /path/to/*_model.txt
+```
+
 
 3. Get predictions:
 Change the data_source to what you want to test on and run infer.py as follows.
 ```
 python infer.py --data_source ccle_candle
+```
+```
+singularity exec --nv SWnet.sif infer.sh  $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR --config_file /path/to/*_model.txt --data_source name-of-the-evaluating-dataset
+```
+For example, 
+```
+singularity exec --nv SWnet.sif infer.sh  $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR --config_file /path/to/*_model.txt --data_source ccle_candle
 ```
 
 
