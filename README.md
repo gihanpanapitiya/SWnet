@@ -99,15 +99,17 @@ In the 'other_ds' field, provide the datasets which the trained model will be ev
 ```
 other_ds = 'ccle_candle, gcsi_candle, gdscv1_candle, gdscv2_candle' # other datasets the trained model will be tested with. specify these datasets seperated by a comma. eg: 'ccle_candle' 'gcsi_candle', 'gdscv1_candle'
 ```
+```
 cross_study=True
 data_split_id=0
 metric='auc' # or 'ic50'
-
 ```
+
 Then run the following command,
 ```
 python preprocess.py
 ```
+<span style="background-color: #3498DB">singularity</span>
 ```
 singularity exec --nv SWnet.sif preprocess.sh  $CUDA_VISIBLE_DEVICES $CANDLE_DATA_DIR --config_file /path/to/*_model.txt
 ```
