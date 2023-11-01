@@ -14,6 +14,7 @@ where SWnet.sif is the name of the Singularity container and SWnet.def is the Si
 ### Using Conda
 ```
 conda env create -f environment.yaml
+conda activate swnet
 ```
 
 

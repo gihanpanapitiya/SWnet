@@ -98,14 +98,14 @@ def candle_preprocess(data_type='CCLE',
     val_df = add_smiles(smiles_df,rs_val, metric)
     test_df = add_smiles(smiles_df,rs_test, metric)
 
-    # if params['use_proteomics_data']:
+    if params['use_proteomics_data']:
 
-    gexp_ = load_generic_expression_data('proteomics_restructure_with_knn_impute.tsv')
-    use_improve_ids = gexp_.index.values
+        gexp_ = load_generic_expression_data('proteomics_restructure_with_knn_impute.tsv')
+        use_improve_ids = gexp_.index.values
 
-    train_df = train_df[train_df.improve_sample_id.isin(use_improve_ids)]
-    val_df = val_df[val_df.improve_sample_id.isin(use_improve_ids)]
-    test_df = test_df[test_df.improve_sample_id.isin(use_improve_ids)]
+        train_df = train_df[train_df.improve_sample_id.isin(use_improve_ids)]
+        val_df = val_df[val_df.improve_sample_id.isin(use_improve_ids)]
+        test_df = test_df[test_df.improve_sample_id.isin(use_improve_ids)]
 
 
 
